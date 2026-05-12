@@ -1,14 +1,27 @@
 CC = gcc
 CFLAGS = -Wall -g -Iinclude
 
-SRC = src/main.c
-OUT = poker.exe
+HOST = bondi.eecs.uci.edu
+PORT = 10215 
 
-all:
-	$(CC) $(CFLAGS) $(SRC) -o $(OUT)
+COMMON_SRC = 
 
-run: all
-	./$(OUT)
+SERVER_SRC = src/server.c $(COMMON_SRC)
+CLIENT_SRC = src/client.c $(COMMON_SRC)
+
+all: server client
+
+server: $(SERVER_SRC)
+	$(CC) $(CFLAGS) $(SERVER_SRC) -o server
+
+client: $(CLIENT_SRC)
+	$(CC) $(CFLAGS) $(CLIENT_SRC) -o client
+
+run-server: server
+	./server $(PORT)
+
+run-client: client
+	./client localhost $(HOST) $(PORT)
 
 clean:
-	del /Q $(OUT)
+	rm -f server client server.exe client.exe
