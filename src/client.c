@@ -22,6 +22,7 @@ int main(int argc, char *argv[])
     struct hostent *server;
 
     char buffer[256];
+    
     if (argc < 3) {
        fprintf(stderr,"usage %s hostname port\n", argv[0]);
        exit(0);
