@@ -21,7 +21,7 @@ run-server: server
 	./server $(PORT)
 
 run-client: client
-	./client localhost $(HOST) $(PORT)
+	./client $(HOST) $(PORT)
 
 clean:
 	rm -f server client server.exe client.exe
