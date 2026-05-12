@@ -41,6 +41,7 @@ int acceptClients(int* clientSockets, int socket){ //returns current number of p
 void readClientsMessages(int * clientSockets, int joinedClients){  
     int currClientSocket; 
     char buffer[256];
+    int n; 
 
     for(int i = 0; i < joinedClients; i++){ 
         bzero(buffer,256);
