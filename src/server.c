@@ -50,19 +50,21 @@ int acceptClients(int* clientSockets, int socket){ //returns current number of p
 void readMessage(int clientSocket){ 
     char buffer[256]; 
     int n; 
+    bzero(buffer, 256); 
 
     printf("message being read\n"); 
 
     n = read(clientSocket, buffer, 255);  
 
-    if (n < 0) error("ERROR reading from socket");
-         printf("Here is the message: %s\n",buffer);
+    if (n < 0) 
+        error("ERROR reading from socket");
 
+    printf("Here is the message: %s\n",buffer);
     n = write(clientSocket, "I got your message", 18);  
 
-     
-    if (n < 0) error("ERROR writing to socket");
-        close(clientSocket);
+    if (n < 0) 
+        error("ERROR writing to socket");
+        //close(clientSocket);
 
 }
 
@@ -84,7 +86,7 @@ void readClientsMessages(int * clientSockets, int joinedClients){
         n = write(currClientSocket,"I got your message",18);
         
         if (n < 0) error("ERROR writing to socket");
-            close(currClientSocket);
+            //close(currClientSocket);
 
     }
 }
