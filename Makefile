@@ -11,7 +11,7 @@ COMMON_SRC =
 
 SERVER_SRC = src/server.c $(COMMON_SRC)
 CLIENT_SRC = src/client.c $(COMMON_SRC)
-GUI_SRC = src/gui_client.c src/gui.c $(COMMON_SRC)
+GUI_SRC =  src/render.c src/gui_client.c src/gui.c $(COMMON_SRC)
 
 all: server client
 
