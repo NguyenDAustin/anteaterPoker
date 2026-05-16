@@ -2,8 +2,9 @@
 #define ENUM_H 
 
 enum {
-    WINDOW_HEIGHT = 900, 
-    WINDOW_WIDTH = 900
+    WINDOW_HEIGHT = 800, 
+    WINDOW_WIDTH = 900,
+    NUM_OF_RANKS = 13
 }; 
 
 #endif 

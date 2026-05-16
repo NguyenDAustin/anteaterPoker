@@ -1,7 +1,78 @@
 
 #include "render.h"
 
-const char* CARDS_RESOURCES[MAX_CARDS] = {"resources/jack_of_hearts.png"};
+/*
+
+typedef enum {
+    HEARTS = 0,
+    DIAMONDS = 1,
+    CLUBS = 2,
+    SPADES = 3,
+    ANTEATER_SUIT = 4
+} Suit;*/
+
+const char* CARDS_RESOURCES[MAX_CARDS] = {
+    // Hearts
+    "resources/ace_of_hearts.png",
+    "resources/two_of_hearts.png",
+    "resources/three_of_hearts.png",
+    "resources/four_of_hearts.png",
+    "resources/five_of_hearts.png",
+    "resources/six_of_hearts.png",
+    "resources/seven_of_hearts.png",
+    "resources/eight_of_hearts.png",
+    "resources/nine_of_hearts.png",
+    "resources/ten_of_hearts.png",
+    "resources/jack_of_hearts.png",
+    "resources/queen_of_hearts.png",
+    "resources/king_of_hearts.png",
+
+    // Diamonds
+    "resources/ace_of_diamonds.png",
+    "resources/two_of_diamonds.png",
+    "resources/three_of_diamonds.png",
+    "resources/four_of_diamonds.png",
+    "resources/five_of_diamonds.png",
+    "resources/six_of_diamonds.png",
+    "resources/seven_of_diamonds.png",
+    "resources/eight_of_diamonds.png",
+    "resources/nine_of_diamonds.png",
+    "resources/ten_of_diamonds.png",
+    "resources/jack_of_diamonds.png",
+    "resources/queen_of_diamonds.png",
+    "resources/king_of_diamonds.png",
+
+    // Clubs
+    "resources/ace_of_clubs.png",
+    "resources/two_of_clubs.png",
+    "resources/three_of_clubs.png",
+    "resources/four_of_clubs.png",
+    "resources/five_of_clubs.png",
+    "resources/six_of_clubs.png",
+    "resources/seven_of_clubs.png",
+    "resources/eight_of_clubs.png",
+    "resources/nine_of_clubs.png",
+    "resources/ten_of_clubs.png",
+    "resources/jack_of_clubs.png",
+    "resources/queen_of_clubs.png",
+    "resources/king_of_clubs.png",
+
+    // Spades
+    "resources/ace_of_spades.png",
+    "resources/two_of_spades.png",
+    "resources/three_of_spades.png",
+    "resources/four_of_spades.png",
+    "resources/five_of_spades.png",
+    "resources/six_of_spades.png",
+    "resources/seven_of_spades.png",
+    "resources/eight_of_spades.png",
+    "resources/nine_of_spades.png",
+    "resources/ten_of_spades.png",
+    "resources/jack_of_spades.png",
+    "resources/queen_of_spades.png",
+    "resources/king_of_spades.png"
+};
+
 #define MAX_PLAYER_CARDS 2
 #define MAX_DEALER_CARDS 5
 
@@ -10,11 +81,11 @@ typedef cairo_surface_t Icon;
 
 
 float getDealerCardSize(){ 
-    return WINDOW_HEIGHT * 0.15; 
+    return WINDOW_WIDTH * 0.15; 
 }
 
 float getPlayerCardSize(){ 
-    return WINDOW_HEIGHT * 0.1; 
+    return WINDOW_WIDTH * 0.1; 
 }
 
 Icon* imageToSurface(const char *filename)
@@ -65,8 +136,9 @@ void drawImg(cairo_t* cr, Icon *img, float xPos, float yPos, float targetSize)
     cairo_restore(cr);
 }
 
-void drawCard(cairo_t* cr, Icon* img, int xPos, int yPos){ 
-    float targetSize = getPlayerCardSize(); 
+void drawPlayerCard(cairo_t* cr, Icon* img, int xPos){ 
+    float targetSize = getPlayerCardSize();
+    float yPos = (float)WINDOW_HEIGHT * 0.8; 
     drawImg(cr, img, xPos, yPos, targetSize); 
 }
 
@@ -81,16 +153,22 @@ int getNextPos(int xPos, int imageWidth){
     return xPos; 
 }
 
-void drawPlayerCards(cairo_t* cr, Icon** cards){
-    //x pos , ypos --> ypos doesn't change
+void drawPlayerCards(cairo_t* cr, Icon** images, Card* playerCards){
+    Icon* image; 
+
+    float targetSize = getPlayerCardSize(); 
+    float xPos = (float)WINDOW_WIDTH / 2.0 - (MAX_PLAYER_CARDS * targetSize/2.0); 
+
     for(int i = 0; i < MAX_PLAYER_CARDS; i++){
-        //drawCard(cr, cards[i]); 
+        image = getCardImage(images, playerCards[i]); 
+        drawPlayerCard(cr, image, xPos); 
+        xPos = getNextPos(xPos, targetSize); 
     }
 }
 
 Icon* getCardImage(Icon** images, Card card){  //will deal with anteater cards later... cause idk what the anteater is
-    int suit = card.suit; 
-    int index = suit * 4 + card.rank; 
+    int suit = card.suit; //
+    int index = suit * NUM_OF_RANKS + card.rank - 1; 
     return images[index]; 
 }
 
@@ -103,28 +181,46 @@ void drawDealerCards(cairo_t* cr, Icon** images, Card* dealerCards, int cardsToD
     float xPos = (float)WINDOW_WIDTH / 2.0 - (cardsToDeal * targetSize/2.0); 
 
     for(int i = 0; i < cardsToDeal && i < MAX_DEALER_CARDS; i++){
-        //image = getCardImage(dealerCards[i]);  
-        //drawCard(cr, images[0], xPos, yPos); 
-        drawDealerCard(cr, images[0], xPos); 
+        image = getCardImage(images, dealerCards[i]);  
+        drawDealerCard(cr, image, xPos); 
         xPos = getNextPos(xPos, targetSize);
     }
-    //dealerCards[]
 }
 
 gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){
     Icon** images = user_data; 
 
-    Card card1 = cardCtor(HEARTS, JACK); 
-    Card card2 = cardCtor(HEARTS, JACK); 
-    Card card3 = cardCtor(HEARTS, JACK); 
-    Card card4 = cardCtor(HEARTS, JACK); 
-    Card card5 = cardCtor(HEARTS, JACK); 
+    //temp solu for testing --> future dealer cards should be passed in from user_data //////////////////////////
+    Card card1 = cardCtor(CLUBS, JACK); 
+    Card card2 = cardCtor(DIAMONDS, KING); 
+    Card card3 = cardCtor(CLUBS, ACE); 
+    Card card4 = cardCtor(SPADES, NINE); 
+    Card card5 = cardCtor(HEARTS, FIVE); 
 
-    Card dealerCards[MAX_DEALER_CARDS] = {card1, card2, card3, card4, card5}; //temp solution for testing
-    int cardsToDeal = MAX_DEALER_CARDS; 
+    Card dealerCards[MAX_DEALER_CARDS] = {card1, card2, card3, card4, card5}; 
+    int cardsToDeal = MAX_DEALER_CARDS;  
+
+    ////////////////////////////////////////////////////
+
+    //temp solu for testing --> future player cards should be passed in from user_data //////////////////////////
+
+    card1 = cardCtor(HEARTS, NINE); 
+    card2 = cardCtor(DIAMONDS, SIX); 
+
+    Card playerCards[MAX_PLAYER_CARDS] = {card1, card2}; 
+
+    ////////////////////////////////////////////////////
+
     drawDealerCards(cr, images, dealerCards, cardsToDeal); //cards to deal aka what turn
+    drawPlayerCards(cr, images, playerCards); 
+    
 
-    //drawCard(cr, images[0]); 
+    //if end turn draw everyone's cards 
+
+    //have to determine what to draw when someone has folded 
+    //draw pop ups for when someone calls, checks, raises, goes all in etc 
+    //table ?
+
 }
 
 

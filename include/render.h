@@ -14,15 +14,18 @@ Icon* imageToSurface(const char *filename);
 
 void createImages(Icon** imgs, int numOfImgs); 
 
-void scale(cairo_t *cr, Icon *img, float targetSize);
+Icon* getCardImage(Icon** images, Card card); 
 
+void scale(cairo_t *cr, Icon *img, float targetSize);
 
 
 void drawImg(cairo_t* cr, Icon *img, float xPos, float yPos, float targetSize); 
 
-void drawCard(cairo_t* cr, Icon* img, int xPos, int yPos); 
+void drawPlayerCard(cairo_t* cr, Icon* img, int xPos); 
 
-void drawPlayerCards(cairo_t* cr, Icon** cards); 
+void drawDealerCard(cairo_t* cr, Icon* img, int xPos); 
+
+void drawPlayerCards(cairo_t* cr, Icon** cards, Card* playerCards); 
 
 gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data); 
 

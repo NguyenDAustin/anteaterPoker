@@ -8,6 +8,8 @@
 extern const char* TITLE; 
 extern const char* CSS; 
 extern const char* POKER_TABLE; 
+extern const int BUTTON_HEIGHT; 
+extern const int BUTTON_WIDTH;
 
 typedef struct Poker_Gui{
     GtkWidget* Window; 
