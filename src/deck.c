@@ -99,3 +99,13 @@ void print_card(Card card) {
 
     printf("%s of %s\n", rank_names[card.rank], suit_names[card.suit]); //display
 }
+
+
+
+//Queency Added Functions 
+Card cardCtor(Suit suit, int rank){
+    Card card; 
+    card.suit = suit; 
+    card.rank = rank; 
+    return card; 
+} 

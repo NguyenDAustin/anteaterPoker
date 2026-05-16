@@ -7,7 +7,7 @@ GTK_LIBS = `pkg-config --libs gtk+-3.0`
 HOST = bondi.eecs.uci.edu
 PORT = 10215 
 
-COMMON_SRC = 
+COMMON_SRC = src/deck.c
 
 SERVER_SRC = src/server.c $(COMMON_SRC)
 CLIENT_SRC = src/client.c $(COMMON_SRC)

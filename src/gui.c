@@ -1,16 +1,13 @@
 
 #include "gui.h"
-#include "render.h"
 
-const int WINDOW_HEIGHT = 900; 
-const int WINDOW_WIDTH = 900; 
 const char* TITLE = "ANTEATER POKER"; 
-const char* POKER_TABLE_CSS = ".poker-bg {background-color: rgb(22,47,31);}"; 
-const char* POKER_TABLE = "poker-bg"; 
+const char* CSS = ".poker-bg { background-color: rgb(22, 47, 31);}"; 
+const char* POKER_TABLE_CSS = "poker-bg"; 
 
 void loadCss(GtkWidget* window, const char* CSS){ 
     GtkCssProvider* provider = gtk_css_provider_new(); 
-    gtk_css_provider_load_from_data(provider, POKER_TABLE_CSS, -1, NULL); 
+    gtk_css_provider_load_from_data(provider, CSS, -1, NULL); 
 
     GdkScreen* screen = gtk_widget_get_screen(window);
 
@@ -37,7 +34,7 @@ GtkWidget* createWindow(GtkApplication* app){
 
 GtkWidget* createMainContainer(){
     GtkWidget* mainBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10); 
-    setStyle(mainBox, POKER_TABLE); 
+    setStyle(mainBox, POKER_TABLE_CSS); 
     return mainBox; 
 }
 
@@ -45,7 +42,7 @@ GtkWidget* createPokerTable(Icon** images){
     GtkWidget* pokerTable = gtk_drawing_area_new(); 
     
     gtk_widget_set_size_request(pokerTable, WINDOW_WIDTH, WINDOW_HEIGHT); 
-    g_signal_connect(pokerTable, "draw", G_CALLBACK(drawPokerTable),images);
+    g_signal_connect(pokerTable, "draw", G_CALLBACK(drawPokerTable), images);
 
     gtk_widget_set_hexpand(pokerTable, FALSE);
     gtk_widget_set_halign(pokerTable, GTK_ALIGN_CENTER);
@@ -58,20 +55,22 @@ void create_poker_gui(GtkApplication *app, gpointer user_data){
     printf("Creating poker gui\n"); 
     Poker_Gui* pokerGui = g_malloc(sizeof(Poker_Gui));
     pokerGui->Window =  createWindow(app); 
-
     
-    loadCss(pokerGui->Window, POKER_TABLE_CSS);
+
+
+    loadCss(pokerGui->Window, CSS);
     
     //creating images
-    Icon** images = g_malloc(sizeof(Icon*) * MAX_CARDS); 
-    createImages(images, 1); 
+    pokerGui->images = g_malloc(sizeof(Icon*) * MAX_CARDS); 
+    createImages(pokerGui->images, 1); 
 
-    GtkWidget* pokerTable = createPokerTable(images); 
-
+    //creating main container
     GtkWidget *mainBox = createMainContainer(); 
     gtk_container_add(GTK_CONTAINER(pokerGui->Window), mainBox);
-    gtk_box_pack_start(GTK_BOX(mainBox), pokerTable, TRUE, TRUE, 0);
 
+    //creating poker table
+    GtkWidget* pokerTable = createPokerTable(pokerGui->images); 
+    gtk_box_pack_start(GTK_BOX(mainBox), pokerTable, TRUE, TRUE, 0); 
 
     gtk_widget_show_all(pokerGui->Window);  
 }

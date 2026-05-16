@@ -22,11 +22,11 @@ typedef enum {
 } Rank; 
 
 typedef enum {
-    HEARTS,
-    DIAMONDS,
-    CLUBS,
-    SPADES,
-    ANTEATER_SUIT
+    HEARTS = 0,
+    DIAMONDS = 1,
+    CLUBS = 2,
+    SPADES = 3,
+    ANTEATER_SUIT = 4
 } Suit;
 
 typedef enum {
@@ -34,7 +34,7 @@ typedef enum {
     ANTEATER_CARD
 } Cardtype;
 
-typedef struct {
+typedef struct Card {
     int rank;
     Suit suit;
     Cardtype type;
@@ -54,5 +54,9 @@ Card deal(Deck *deck);
 void reset_deck(Deck *deck);
 
 void print_card(Card card);
+
+
+//Queency Added Functions 
+Card cardCtor(Suit suit, int rank); 
 
 #endif

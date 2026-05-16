@@ -2,16 +2,16 @@
 #define GUI_H
 
 #include <gtk/gtk.h>
+#include "render.h"
+#include "enums.h"
 
-
-extern const int WINDOW_HEIGHT;
-extern const int WINDOW_WIDTH; 
 extern const char* TITLE; 
-extern const char* POKER_TABLE_CSS; 
+extern const char* CSS; 
 extern const char* POKER_TABLE; 
 
 typedef struct Poker_Gui{
     GtkWidget* Window; 
+    Icon** images; 
 } Poker_Gui; 
 
 //HELPER FUNCTIONS 
