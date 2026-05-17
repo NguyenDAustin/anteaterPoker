@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 
+#include "gui.h"
 
 void error(const char *msg)
 {
@@ -50,26 +51,18 @@ int main(int argc, char *argv[])
 
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
         error("ERROR connecting");
-    
-    while(true){
-        printf("Please enter the message: ");
-            bzero(buffer,256);
-            fgets(buffer,255,stdin); 
-        
-        n = write(sockfd,buffer,strlen(buffer));
 
-        if (n < 0) 
-            error("ERROR writing to socket");
+    //GUI stuff 
+    GtkApplication *app;
+    int status;
 
-        bzero(buffer,256);
-        n = read(sockfd,buffer,255);
+    app = gtk_application_new("com.anteater.poker", G_APPLICATION_FLAGS_NONE);
 
-        if (n < 0) 
-            error("ERROR reading from socket");
+    g_signal_connect(app, "activate", G_CALLBACK(create_poker_gui), NULL);
 
-        printf("%s\n",buffer);
+    status = g_application_run(G_APPLICATION(app), 0, NULL);
 
-    }
+    g_object_unref(app);
 
 
     close(sockfd);

@@ -5,8 +5,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h> 
+#include <stdbool.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+
+#include "server.h"
 
 
 #define MAX_PLAYERS 3 //the max amount of clients the server will allow to connect
@@ -17,46 +20,94 @@ void error(const char *msg)
     exit(1);
 }
 
-int acceptClients(int* clientSockets, int socket){ //returns current number of players accepted 
+bool hasAcceptionError(int newClientSocket){ 
+
+    if(newClientSocket < 0){ 
+        printf("ERROR: accepting client failed\n"); 
+    }
+
+    return (newClientSocket < 0); 
+}
+
+
+bool portNoProvided(int args){ // checks if the number of command line arguments is less than 2 //aka not ./server portno
+    if(args < 2) 
+        fprintf(stderr,"ERROR, no port provided\n");
+    return (args >= 2); 
+}
+
+
+void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers){ 
     struct sockaddr_in cli_addr; 
     socklen_t clilen; //size of client's address structure 
-    int newClientSocket, joinedPlayers = 0;  
+    int newClientSocket; 
 
-    for(int i = 0; i < MAX_PLAYERS; i++){ 
-        clilen = sizeof(cli_addr);
-        newClientSocket = accept(socket, (struct sockaddr *) &cli_addr, &clilen); 
+    clilen = sizeof(cli_addr);
+    newClientSocket = accept(serverSocket, (struct sockaddr *) &cli_addr, &clilen);
 
-        if(newClientSocket < 0){ //error accepting client
-            printf("ERROR on accept\n");  
-        }
-        else{
-            clientSockets[joinedPlayers] = newClientSocket; 
-            joinedPlayers++; 
-        }
+    if(!hasAcceptionError(newClientSocket)){ 
+        printf("client has been accepted\n"); 
+        clientSockets[*joinedPlayers] = newClientSocket; 
+        (*joinedPlayers)++; 
     }
-    return joinedPlayers; 
 } 
 
-//just a local func for now
-void readClientsMessages(int * clientSockets, int joinedClients){  
-    int currClientSocket; 
-    char buffer[256];
+
+void readMessage(int clientSocket){ 
+    char buffer[256]; 
     int n; 
+    bzero(buffer, 256); 
 
-    for(int i = 0; i < joinedClients; i++){ 
-        bzero(buffer,256);
-        currClientSocket = clientSockets[i]; 
+    printf("message being read\n"); 
 
-        n = read(currClientSocket,buffer,255); 
+    n = read(clientSocket, buffer, 255);  
 
-        if (n < 0) error("ERROR reading from socket");
-        printf("Here is the message: %s\n",buffer);
-        
-        n = write(currClientSocket,"I got your message",18);
-        
-        if (n < 0) error("ERROR writing to socket");
-            close(currClientSocket);
+    if (n < 0) 
+        error("ERROR reading from socket");
 
+    printf("Here is the message: %s\n",buffer);
+    n = write(clientSocket, "I got your message", 18);  
+
+    if (n < 0) 
+        error("ERROR writing to socket");
+
+}
+
+
+void lobby(int serverSocket, int* clientSockets){ 
+    int joinedPlayers = 0; 
+    int max_fd = serverSocket; 
+    int newClientSocket; 
+
+    printf("LOBBY CREATED - MULTI CONNECTION VERSION\n");
+
+    while(true){ //watch 
+        fd_set socketList; 
+        FD_ZERO(&socketList); 
+        FD_SET(serverSocket, &socketList);
+
+        //listen to current clients 
+        for(int i = 0; i < joinedPlayers; i++){ 
+            newClientSocket = clientSockets[i]; 
+            
+            FD_SET(newClientSocket, &socketList); //add client socket to be read from 
+
+            if (clientSockets[i] > max_fd) { 
+                max_fd = clientSockets[i];
+            }
+        }
+
+        select(max_fd + 1, &socketList, NULL, NULL, NULL);
+
+        //accept new clients 
+        if(FD_ISSET(serverSocket, &socketList))
+            acceptClient(clientSockets, serverSocket, &joinedPlayers); 
+
+        //reading current messages
+        for (int i = 0; i < joinedPlayers; i++) {
+            if (FD_ISSET(clientSockets[i], &socketList))
+                readMessage(clientSockets[i]);
+        }
     }
 }
 
@@ -66,50 +117,35 @@ int main(int argc, char *argv[])
 {
     //array of client sockets --> aka players 
 
+    printf("WE ARE RUNNING THE NEW VERSION\n"); 
+
     int clientSockets[MAX_PLAYERS]; 
-    int joinedPlayers = 0; 
+    int serverSocket, portno;
+    struct sockaddr_in serv_addr; 
 
-     int sockfd, newsockfd, portno;
-     socklen_t clilen;
-     char buffer[256];
-     struct sockaddr_in serv_addr, cli_addr;
-     int n;
 
-     if (argc < 2) { // checks if the number of command line arguments is less than 2 //aka not ./server portno
-         fprintf(stderr,"ERROR, no port provided\n");
-         exit(1);
-     }
+    if(!portNoProvided(argc)) 
+        exit(1); 
 
-     sockfd = socket(AF_INET, SOCK_STREAM, 0); //if obtained a port number --> create a socket
+    serverSocket = socket(AF_INET, SOCK_STREAM, 0); //if obtained a port number --> create a socket
 
-     if (sockfd < 0) 
+    if (serverSocket < 0) 
         error("ERROR opening socket");
 
-     bzero((char *) &serv_addr, sizeof(serv_addr)); //clear possible garbage from serv_addr
+    bzero((char *) &serv_addr, sizeof(serv_addr)); //clear possible garbage from serv_addr
 
-     portno = atoi(argv[1]); 
+    portno = atoi(argv[1]); 
 
-     serv_addr.sin_family = AF_INET;
-     serv_addr.sin_addr.s_addr = INADDR_ANY;
-     serv_addr.sin_port = htons(portno);
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    serv_addr.sin_port = htons(portno);
 
-     if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) error("ERROR on binding");
+    if (bind(serverSocket, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) error("ERROR on binding");
 
-     listen(sockfd, MAX_PLAYERS); //we will allow only these many connections in our connection queue
+    listen(serverSocket, MAX_PLAYERS); //we will allow only these many connections in our connection queue
 
-     joinedPlayers = acceptClients(clientSockets, sockfd); 
+    lobby(serverSocket, clientSockets); 
 
-     readClientsMessages(clientSockets, joinedPlayers); 
-
-     /*clilen = sizeof(cli_addr);
-     newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen); //accepts the client that connected and return the unique client socket
-    
-    if (newsockfd < 0) 
-          error("ERROR on accept"); */
-
-     //bzero(buffer,256);
-     //n = read(newsockfd,buffer,255);  
-
-     close(sockfd);
-     return 0; 
+    close(serverSocket);
+    return 0; 
 }
