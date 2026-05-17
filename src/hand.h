@@ -56,7 +56,7 @@ void sort(Card cards[], int count);
 
 //checks wins
 int royalFlush(Card cards[], int count);
-int strightFlush(Card cards[], int count);
+int straightFlush(Card cards[], int count);
 int four(Card cards[], int count);
 int fullHouse(Card cards[], int count);
 int flush(Card cards[], int count);
@@ -66,7 +66,6 @@ int twoPair(Card cards[], int count);
 int pairs(Card cards[], int count);
 int highCard(Card cards[], int count);
 
-int multiples(Card cards[], int count);
 
 /*
 Royale Flush: 9
