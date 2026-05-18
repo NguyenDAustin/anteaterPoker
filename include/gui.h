@@ -11,10 +11,33 @@ extern const char* POKER_TABLE;
 extern const int BUTTON_HEIGHT; 
 extern const int BUTTON_WIDTH;
 
+
+typedef struct Player_Info{ //not yet --> but I need this later
+    char* name; 
+    int chips; 
+    Icon* avatarImg; 
+    Card* playerCards; 
+} Player_Info; 
+
+
 typedef struct Poker_Gui{
     GtkWidget* Window; 
+
+    //Drawing Areas 
+    GtkWidget* pokerTable; 
+
+    //image resources
     Icon** images; 
+    Icon** avatarImages; 
+    Icon* chipIcon;
+
+    //Player Info 
+    Player_Info* playerInfo; 
+
 } Poker_Gui; 
+
+//should have an array of all the avatar images
+
 
 //HELPER FUNCTIONS 
 

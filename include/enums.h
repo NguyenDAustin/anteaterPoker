@@ -4,7 +4,8 @@
 enum {
     WINDOW_HEIGHT = 800, 
     WINDOW_WIDTH = 900,
-    NUM_OF_RANKS = 13
+    NUM_OF_RANKS = 13,
+    MAX_PLAYERS = 6
 }; 
 
 #endif 
