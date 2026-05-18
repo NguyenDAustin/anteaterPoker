@@ -6,9 +6,8 @@
 
 typedef enum { 
 	ANTEATER = 0, 
-	ACE= 1, 
-	TWO= 2, 
-	THREE= 3, 
+	TWO = 2, 
+	THREE = 3, 
 	FOUR = 4, 
 	FIVE = 5, 
 	SIX = 6, 
@@ -18,7 +17,8 @@ typedef enum {
     TEN = 10,
     JACK = 11,
     QUEEN = 12,
-    KING = 13
+    KING = 13,
+    ACE = 14
 } Rank; 
 
 typedef enum {
