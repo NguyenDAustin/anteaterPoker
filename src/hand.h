@@ -40,11 +40,11 @@ void print_hand(Hand *hand);
 
 
 //check
-HandResult eval_hand(Card player_cards[2], Card board_cards[5]);
+int eval_hand(Card player_cards[2]);
+int eval_points(Card player_cards[2], Card board_cards[5]);
 
 //compare hands
-int compare_hands(HandResult h1, HandResult h2);
-
+int compare_hands(Card p1_hand[2], Card p2_hand[2], Card board[5]);
 //helper functions
 int count_rank(Card cards[], int count, Rank rank);
 int count_suit(Card cards[], int count, Suit suit);

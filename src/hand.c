@@ -72,8 +72,6 @@ void sort(Card cards[], int count)
 //i actually don't think we'd need this
 int highCard(Card cards[], int count)
 {
-    sort(cards, count);
-
     for (int i = 0; i < count; i++) {
 
         // skip Anteater for now
@@ -87,8 +85,6 @@ int highCard(Card cards[], int count)
 
 int pairs(Card cards[], int count)
 {
-    sort(cards, count);
-
     int temp = 0;
 
     for (int i = 0; i < count - 1; i++) {
@@ -117,8 +113,6 @@ int twoPair(Card cards[], int count)
 
 int three(Card cards[], int count)
 {
-    sort(cards, count);
-
     for (int i = 0; i < count - 2; i++) {
 
         // skip Anteater cards
@@ -137,8 +131,6 @@ int three(Card cards[], int count)
 
 int straight(Card cards[], int count)
 {
-    sort(cards, count);
-
     int temp = 1;
 
     for (int i = 0; i < count - 1; i++) {
@@ -193,8 +185,6 @@ int flush(Card cards[], int count)
 
 int fullHouse(Card cards[], int count)
 {
-    sort(cards, count);
-
     int tempThree = 0;
     int tempTwo = 0;
 
@@ -223,8 +213,6 @@ int fullHouse(Card cards[], int count)
 
 int four(Card cards[], int count)
 {
-    sort(cards, count);
-
     for (int i = 0; i < count - 3; i++) {
 
         if (cards[i].type == ANTEATER_CARD) {
@@ -388,3 +376,97 @@ int count_anteaters(Card cards[], int count)
 
     return total;
 }
+
+
+int eval_hand(Card player_cards[2])
+{
+    int ans = 0;
+
+    for (int i = 0; i < 2; i++)
+    {
+        ans += player_cards[i].rank;
+    }
+
+    return ans;
+}
+
+int eval_points(Card player_cards[2], Card board_cards[5])
+{
+    Card cards[7];
+    int count = 7;
+
+    sort(cards, count);
+
+    //add cards from hand to a new hand
+    for (int i = 0; i < 2; i++) {
+        cards[i] = player_cards[i];
+    }
+
+    //add cards from board to new hand
+    for (int i = 0; i < 5; i++) {
+        cards[i + 2] = board_cards[i];
+    }
+
+    if (royalFlush(cards, count)) {
+        return 9;
+    }
+    else if (straightFlush(cards, count)) {
+        return 8;
+    }
+    else if (four(cards, count)) {
+        return 7;
+    }
+    else if (fullHouse(cards, count)) {
+        return 6;
+    }
+    else if (flush(cards, count)) {
+        return 5;
+    }
+    else if (straight(cards, count)) {
+        return 4;
+    }
+    else if (three(cards, count)) {
+        return 3;
+    }
+    else if (twoPair(cards, count)) {
+        return 2;
+    }
+    else if (pairs(cards, count)) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+int compare_hands(Card p1_hand[2], Card p2_hand[2], Card board[5])
+{
+    int p1_big = eval_points(p1_hand, board);
+    int p2_big = eval_points(p2_hand, board);
+
+    int p1_small = eval_points(p1_hand);
+    int p2_small = eval_points(p2_hand);
+
+    if (p1_big > p2_big){
+        return 1; //player 1 wins
+    }
+    else if (p1_big < p2_big){ //to check
+        return 2; //player 2 wins;
+    }
+    else if (p1_big == p2_big){
+        if (p1_small > p2_small){
+            return 1;
+        }
+        else if (p1_small > p2_small){
+            return 2; 
+        }
+    }
+    else {
+        return 0; //split the pot
+    }
+}
+
+
+
+//need to work on anteater stuff
+//need to make it so that ACE can be 1 and 14
