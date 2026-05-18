@@ -1,3 +1,6 @@
+#ifndef PLAYER_H
+#define PLAYER_H
+
 #include "card.h"
 #include <stdbool.h>
 
@@ -21,8 +24,15 @@ typedef struct
 typedef enum
 {
     FOLD,
+    CHECK,
     CALL,
+    BET,
     RAISE
+} PlayerActionType;
+
+typedef struct {
+    PlayerActionType actionType;
+    int amount;
 } PlayerAction;
 
 void initPlayer(Player *player, const char *name, int seat, int chips, PlayerType type);
@@ -31,3 +41,5 @@ void dealHoleCards(Player *player, Card card1, Card card2);
 void takeAction(Player *player, PlayerAction action, int amount);
 void foldPlayer(Player *player);
 bool isPlayerActive(const Player *player);
+
+#endif
