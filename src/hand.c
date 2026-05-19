@@ -98,7 +98,6 @@ int pairs(Card cards[], int count)
 
             temp++;
 
-            // skip duplicate card pairs
             i++;
         }
     }
@@ -131,31 +130,64 @@ int three(Card cards[], int count)
 
 int straight(Card cards[], int count)
 {
-    int temp = 1;
+    sort(cards, count);
+
+    int streak = 1;
 
     for (int i = 0; i < count - 1; i++) {
 
-        if (cards[i].type == ANTEATER_CARD) {
-            continue;
-        }
-
-        // skip duplicate ranks
+        // skip duplicates
         if (cards[i].rank == cards[i + 1].rank) {
             continue;
         }
 
-        // consecutive cards
         if (cards[i + 1].rank == cards[i].rank + 1) {
 
-            temp++;
+            streak++;
 
-            if (temp >= 5) {
+            if (streak >= 5) {
                 return 1;
             }
         }
         else {
-            temp = 1;
+            streak = 1;
         }
+    }
+
+    // A 2 3 4 5 case
+
+    int has_ace = 0;
+    int has_two = 0;
+    int has_three = 0;
+    int has_four = 0;
+    int has_five = 0;
+
+    for (int i = 0; i < count; i++) {
+
+        if (cards[i].rank == ACE) {
+            has_ace = 1;
+        }
+        else if (cards[i].rank == TWO) {
+            has_two = 1;
+        }
+        else if (cards[i].rank == THREE) {
+            has_three = 1;
+        }
+        else if (cards[i].rank == FOUR) {
+            has_four = 1;
+        }
+        else if (cards[i].rank == FIVE) {
+            has_five = 1;
+        }
+    }
+
+    if (has_ace &&
+        has_two &&
+        has_three &&
+        has_four &&
+        has_five) {
+
+        return 1;
     }
 
     return 0;
@@ -231,27 +263,21 @@ int four(Card cards[], int count)
 int straightFlush(Card cards[], int count)
 {
     Card suited_cards[7];
-    int suited_count = 0;
+    int suited_count;
 
     Suit suits[] = { HEARTS, DIAMONDS, CLUBS, SPADES };
 
     for (int s = 0; s < 4; s++) {
-
         suited_count = 0;
 
-        //one suit
         for (int i = 0; i < count; i++) {
-
             if (cards[i].suit == suits[s]) {
-
                 suited_cards[suited_count] = cards[i];
                 suited_count++;
             }
         }
 
-        //flush
         if (suited_count >= 5) {
-
             if (straight(suited_cards, suited_count)) {
                 return 1;
             }
