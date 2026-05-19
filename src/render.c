@@ -76,15 +76,34 @@ const char* AVATAR_RESOURCES[MAX_PLAYERS] = {
     "resources/avatars/avatar6_img.png"
 };
 
-const double TABLE_WIDTH_PERCENTAGE = 0.70; 
-const double TABLE_HEIGHT_PERCENTAGE = 0.55; 
-
 #define MAX_PLAYER_CARDS 2
 #define MAX_DEALER_CARDS 5
 #define BACK_CARD_INDEX 56
 
+const double TABLE_WIDTH_PERCENTAGE = 0.70; 
+const double TABLE_HEIGHT_PERCENTAGE = 0.55; 
+
+const Color PLAYER_TEXT_COLOR = {.r = 241/255.0, .g = 230/255.0, .b = 207/255.0};               //light yellow color
+const Color POT_COLOR = {.r = 108/255.0, .g = 161/255.0, .b = 133/255.0};                       //light green color
+const Color TABLE_INNER_OUTLINE_COLOR = {.r = 108/255.0, .g = 161/255.0, .b = 133/255.0};       //light green color
+const Color TABLE_COLOR = {.r = 86/255.0, .g = 134/255.0, .b = 111/255.0};                      //saturated green color 
+const Color TABLE_RAIL_COLOR = {.r = 149/255.0, .g = 121/255.0, .b = 79/255.0};                 //wooden color 
+const Color TABLE_INNER_SHADOW_COLOR = {.r = 58/255.0, .g = 115/255.0, .b = 88/255.0};          //darker green color
 
 typedef cairo_surface_t Icon; 
+
+
+double getRed(const Color color){  
+    return color.r; 
+}
+
+double getGreen(const Color color){ 
+    return color.g; 
+}
+
+double getBlue(const Color color){ 
+    return color.b; 
+}
 
 Seat_Info seatInfoCtor(double xPos, double yPos){  
     Seat_Info seatInfo; 
@@ -417,28 +436,25 @@ void drawTableOutline(cairo_t *cr, int areaW, int areaH)
     roundedTablePath(cr, x, y, tableW, tableH); 
 
     //fill table
-    cairo_set_source_rgba(cr, 86/255.0, 134/255.0, 111/255.0, 1);   // dark green
+    cairo_set_source_rgba(cr, getRed(TABLE_COLOR), getGreen(TABLE_COLOR), getBlue(TABLE_COLOR), 1); 
     cairo_fill_preserve(cr);
 
     //create outer thick rail
-    cairo_set_source_rgba(cr, 149/255.0, 121/255.0, 79/255.0, 1);
+    cairo_set_source_rgba(cr, getRed(TABLE_RAIL_COLOR), getGreen(TABLE_RAIL_COLOR), getBlue(TABLE_RAIL_COLOR), 1);
     cairo_set_line_width(cr, 30.0);
     cairo_stroke(cr);
 
     //inner shadow 
     double inset = 20; 
     roundedTablePath(cr, x + inset, y + inset, tableW - 2 * inset, tableH - 2 * inset); 
-    cairo_set_source_rgba(cr, 58/255.0, 115/255.0, 88/255.0, 1); 
+    cairo_set_source_rgba(cr, getRed(TABLE_INNER_SHADOW_COLOR), getGreen(TABLE_INNER_SHADOW_COLOR), getBlue(TABLE_INNER_SHADOW_COLOR), 1); 
     cairo_set_line_width(cr, 8.0); 
     cairo_stroke(cr);
 
-    
     // Inner thin green outline, slightly inset
     inset = 40.0;
-
     roundedTablePath(cr,x + inset, y + inset, tableW - 2 * inset, tableH - 2 * inset);
-
-    cairo_set_source_rgba(cr, 108/255.0, 161/255.0, 133/255.0, 1);
+    cairo_set_source_rgba(cr, getRed(TABLE_INNER_OUTLINE_COLOR), getGreen(TABLE_INNER_OUTLINE_COLOR), getBlue(TABLE_INNER_OUTLINE_COLOR), 1);
     cairo_set_line_width(cr, 3.0);
     cairo_stroke(cr);
 
@@ -495,27 +511,16 @@ double getTextWidth(cairo_t* cr, const char* fontFace, const char* text, double 
     return width; 
 }
 
-/*
-double getTextWidth(cairo_t* cr, const char* text){
-    cairo_text_extents_t extents;
-    cairo_text_extents(cr, text, &extents);
-    return extents.width; 
-}
-    */
-
-void drawText(cairo_t* cr, const char* text, double fontSize, double xPos, double yPos){ //add a color field
+void drawText(cairo_t* cr, const Color textColor, const char* text, double fontSize, double xPos, double yPos){ //add a color field
     cairo_save(cr); 
 
-    cairo_set_source_rgb(cr, 0.95, 0.90, 0.80);
+    cairo_set_source_rgb(cr, getRed(textColor), getGreen(textColor), getBlue(textColor));
     cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
     cairo_set_font_size(cr, fontSize);
     cairo_move_to(cr, xPos, yPos + fontSize);
     cairo_show_text(cr, text);
 
-  //  double textWidth = getTextWidth(cr, text);
     cairo_restore(cr); 
-
-    //return textWidth;  
 }
 
 void drawAvatar(cairo_t* cr, Icon* avatarImg, double xPos, double yPos, double avatarWidth, double avatarHeight, double inset){ 
@@ -529,6 +534,11 @@ void drawAvatar(cairo_t* cr, Icon* avatarImg, double xPos, double yPos, double a
 double getCenter(double top, double bot){ 
     return (top + bot) * 0.5; 
 }
+
+//right of player info box
+//left of player info box 
+//top of player info box 
+//bot of player info box
 
 void drawPlayerInfoBox(cairo_t* cr, Poker_Gui* pokerGui, double xPos, double yPos){ //the x and y pos that you want to start drawing at (left corner)
     int borderWidth = 3.0;
@@ -561,6 +571,8 @@ void drawPlayerInfoBox(cairo_t* cr, Poker_Gui* pokerGui, double xPos, double yPo
     double playerTextWidth; 
     double chipTextWidth; 
 
+    double sidePadding = boxHeight * 0.05; 
+
     cairo_save(cr); 
 
     drawRoundedBoxPath(cr, xPos, yPos, boxWidth, boxHeight);  //xPos and yPos is top left corner
@@ -576,7 +588,7 @@ void drawPlayerInfoBox(cairo_t* cr, Poker_Gui* pokerGui, double xPos, double yPo
 
     //draw the avatar photo //
     double avatarYPos = getCenter(yPos + borderWidth, yPos + boxHeight - borderWidth) - (avatarHeight/2.0); 
-    double avatarXPos = xPos + (boxHeight * 0.05); 
+    double avatarXPos = xPos + sidePadding; 
     drawAvatar(cr, avatarImg, avatarXPos, avatarYPos, avatarWidth, avatarHeight, 0); 
 
     //draw avatar border 
@@ -589,7 +601,7 @@ void drawPlayerInfoBox(cairo_t* cr, Poker_Gui* pokerGui, double xPos, double yPo
     double nameXPos = avatarXPos + avatarWidth + leftTextMargin; 
     double playerFontSize = boxHeight * 0.15;  
     playerTextWidth = getTextWidth(cr, "Sans", playerName, playerFontSize); 
-    drawText(cr, playerName, playerFontSize, nameXPos, nameYPos);  
+    drawText(cr, PLAYER_TEXT_COLOR, playerName, playerFontSize, nameXPos, nameYPos);  
 
 
     double chipYPos = nameYPos + boxHeight * 0.3; 
@@ -605,13 +617,15 @@ void drawPlayerInfoBox(cairo_t* cr, Poker_Gui* pokerGui, double xPos, double yPo
 
     //add the player chip count
     char chipText[32];
-    snprintf(chipText, sizeof(chipText), "CHIP %d", getChipCount(playerInfo));
+    snprintf(chipText, sizeof(chipText), "CHIPS %d", getChipCount(playerInfo));
     chipTextWidth = getTextWidth(cr, "Sans", chipText, chipFontSize); 
-    drawText(cr, chipText, chipFontSize, chipXPos + chipW, chipYPos); 
+    drawText(cr, PLAYER_TEXT_COLOR, chipText, chipFontSize, chipXPos + chipW + 1.0, chipYPos); 
 
-    //add the cards 
+    //add the cards -
+    double cardsTotalW = MAX_PLAYER_CARDS * cardW + (MAX_PLAYER_CARDS - 1) * getCardGap(drawArea);
     double cardYPos = getCenter(yPos + borderWidth, yPos + boxHeight - borderWidth) - (cardH/2.0); //center --> make helper function
-    double cardXPos = (playerTextWidth > chipTextWidth) ? (nameXPos + playerTextWidth + 5.0) : (chipXPos + chipTextWidth + 5.0); 
+   // double cardXPos = (playerTextWidth > chipTextWidth) ? (nameXPos + playerTextWidth + 5.0) : (chipXPos + chipTextWidth + 5.0); 
+    double cardXPos = xPos + boxWidth - cardsTotalW - sidePadding;  //card width //double cardsTotalW = MAX_PLAYER_CARDS * cardW + (MAX_PLAYER_CARDS - 1) * cardGap;
     drawCards(cr, images, MAX_PLAYER_CARDS, playerCards, cardW, cardH, cardXPos, cardYPos); 
     
     cairo_restore(cr);
@@ -628,7 +642,7 @@ void drawPot(cairo_t* cr, Poker_Gui* pokerGui){
     double yPos = getTableTopEdge(pokerTable) + (tableH * 0.1);
     double xPos = getCenter(getTableLeftEdge(pokerTable), getTableRightEdge(pokerTable)) - (textWidth / 2.0); 
     
-    drawText(cr, "POT", targetH, xPos, yPos); 
+    drawText(cr, POT_COLOR, "POT", targetH, xPos, yPos); 
 } 
 
 gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){
@@ -668,7 +682,7 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){
     Icon* avatarImg; 
     Card* playerCards; */ 
 
-    *(pokerGui->playerInfo) = (Player_Info){.name = "YOSHI", .chips = 1000, .avatarImg = avatarImg, .playerCards = player1Cards}; 
+    *(pokerGui->playerInfo) = (Player_Info){.name = "YOSHI", .chips = 1000, .avatarImg = avatarImg, .playerCards = player1Cards};  
     drawPlayerInfoBox(cr, pokerGui, 100, 100); //draws the player's box 
     drawPot(cr, pokerGui); 
 

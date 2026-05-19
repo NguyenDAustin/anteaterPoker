@@ -12,11 +12,23 @@ extern const char* CARDS_RESOURCES[MAX_CARDS];
 typedef cairo_surface_t Icon; 
 typedef struct Poker_Gui Poker_Gui;
 
+typedef struct Color{
+    double r; 
+    double g; 
+    double b; 
+} Color; 
+
 typedef struct Seat_Info{
     double xPos; 
     double yPos; 
 } Seat_Info; 
 
+//COLOR FUNCTIONS 
+double getRed(const Color color); 
+double getGreen(const Color color); 
+double getBlue(const Color color); 
+
+//SEAT FUNCTIONS
 Seat_Info seatInfoCtor(double xPos, double yPos); //hold's the player's seat
 
 //IMAGE HELPER FUNCTIONS 
@@ -32,11 +44,11 @@ void drawImg(cairo_t* cr, Icon *img, float xPos, float yPos, float targetW, floa
 
 
 //TEXT FUNCTIONS 
-void drawText(cairo_t* cr, const char* text, double fontSize, double xPos, double yPos); //draws text --> returns width of text
+void drawText(cairo_t* cr, const Color textColor, const char* text, double fontSize, double xPos, double yPos); //draws text --> returns width of text
 double getTextWidth(cairo_t* cr, const char* fontFace, const char* text, double fontSize);  //gets the width of text 
 
 //DRAW FUNCTIONS
-gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data); //draws the poker table
+gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data); //draws the poker table --> including cards, pot, player box etc. 
 void drawHiddenCards(cairo_t* cr, Icon** images, float xPos, float yPos, float targetW, float targetH); //draws the card backs  
 
 //DEALER DRAW FUNCTIONS
