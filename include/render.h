@@ -32,8 +32,8 @@ void drawImg(cairo_t* cr, Icon *img, float xPos, float yPos, float targetW, floa
 
 
 //TEXT FUNCTIONS 
-double drawText(cairo_t* cr, const char* text, double fontSize, double xPos, double yPos); //draws text --> returns width of text
-double getTextWidth(cairo_t* cr, const char* text); //gets the width of text
+void drawText(cairo_t* cr, const char* text, double fontSize, double xPos, double yPos); //draws text --> returns width of text
+double getTextWidth(cairo_t* cr, const char* fontFace, const char* text, double fontSize);  //gets the width of text 
 
 //DRAW FUNCTIONS
 gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data); //draws the poker table

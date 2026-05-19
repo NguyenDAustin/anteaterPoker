@@ -3,21 +3,6 @@
 
 const char* TITLE = "ANTEATER POKER"; 
 
-/*
-const char *CSS =
-    ".poker-bg { "
-        "background-color: rgb(22, 47, 31); "
-    "}"
-
-    ".button-bg { "
-        "background-color: rgb(205, 193, 176); "
-        "color: rgb(22, 47, 31); "
-        "font-weight: bold; "
-        "font-size: 18px; "
-    "}";
-*/
-
-
 const char *CSS =
     ".poker-bg {"
     "   background-image: url('resources/poker_table.png');"
@@ -37,11 +22,178 @@ const char *CSS =
 const char* POKER_TABLE_CSS = "poker-bg"; 
 const char* BUTTON_CSS = "button-bg"; 
 
-const char* AVATAR_IMG_RESOURCE = "resources/avatar_img.png"; 
+const char* AVATAR_IMG_RESOURCE = "resources/avatars/avatar1_img.png"; 
 const char* CHIP_ICON_RESOURCE = "resources/red_chip.png"; 
 
 const int BUTTON_HEIGHT = 25; 
 const int BUTTON_WIDTH = 50; 
+
+
+//GETTERS + SETTERS 
+
+GtkWidget* getWindow(const Poker_Gui* pokerGui){  
+    if(!pokerGui || !(pokerGui->Window)){ 
+        printf("ERROR: pokerGui or window is NULL\n"); 
+        return; 
+    }
+    return pokerGui->Window; 
+}
+
+GtkWidget* getPokerTable(const Poker_Gui* pokerGui){ 
+     if(!pokerGui || !(pokerGui->pokerTable)){ 
+        printf("ERROR: pokerGui or poker table is NULL\n"); 
+        return; 
+    }
+    return pokerGui->pokerTable; 
+}
+
+Icon** getImages(const Poker_Gui* pokerGui){ 
+     if(!pokerGui || !(pokerGui->images)){ 
+        printf("ERROR: pokerGui or images is NULL\n"); 
+        return; 
+    }
+    return pokerGui->images; 
+}
+
+Icon** getAvatarImages(const Poker_Gui* pokerGui){ 
+    if(!pokerGui || !(pokerGui->avatarImages)){ 
+        printf("ERROR: pokerGui or avatar images is NULL\n"); 
+        return; 
+    }
+    return pokerGui->avatarImages; 
+}
+
+Icon* getChipIcon(const Poker_Gui* pokerGui){ 
+     if(!pokerGui || !(pokerGui->chipIcon)){ 
+        printf("ERROR: pokerGui or chipIcon is NULL\n"); 
+        return; 
+    }
+    return pokerGui->chipIcon; 
+}
+
+Player_Info* getPlayerInfo(const Poker_Gui* pokerGui){ 
+     if(!pokerGui || !(pokerGui->playerInfo)){ 
+        printf("ERROR: pokerGui or player info is NULL\n"); 
+        return; 
+    }
+    return pokerGui->playerInfo; 
+} 
+
+char* getPlayerName(const Player_Info* playerInfo){ 
+    if(!playerInfo || !(playerInfo->name)){
+        printf("ERROR: player info or player name is NULL\n"); 
+        return; 
+    }
+    return playerInfo->name; 
+}
+
+int getChipCount(const Player_Info* playerInfo){ 
+    if(!playerInfo){
+        printf("ERROR: player info is NULL\n"); 
+        return; 
+    } 
+    return playerInfo->chips; 
+}
+
+Icon* getAvatar(const Player_Info* playerInfo){ 
+    if(!playerInfo || !(playerInfo->avatarImg)){
+        printf("ERROR: player info or player avatar is NULL\n"); 
+        return; 
+    } 
+    return playerInfo->avatarImg; 
+}
+
+Card* getPlayerCards(const Player_Info* playerInfo){ 
+    if(!playerInfo || !(playerInfo->playerCards)){
+        printf("ERROR: player info or player cards is NULL\n"); 
+        return; 
+    } 
+    return playerInfo->playerCards; 
+}
+
+
+void setWindow(Poker_Gui* pokerGui, GtkWidget* window){  
+    if(!pokerGui){ 
+        printf("ERROR: poker gui is NULL\n"); 
+        return; 
+    }
+    pokerGui->Window = window; 
+}
+
+void setPokerTable(Poker_Gui* pokerGui, GtkWidget* pokerTable){ 
+    if(!pokerGui){ 
+        printf("ERROR: poker gui is NULL\n"); 
+        return; 
+    }
+    pokerGui->pokerTable = pokerTable; 
+}
+
+void setImages(Poker_Gui* pokerGui, Icon** cardImages){ 
+    if(!pokerGui){ 
+        printf("ERROR: poker gui is NULL\n"); 
+        return; 
+    }
+    pokerGui->images = cardImages; 
+}
+
+void setAvatarImages(Poker_Gui* pokerGui, Icon** avatarImages){ 
+    if(!pokerGui){ 
+        printf("ERROR: poker gui is NULL\n"); 
+        return; 
+    }
+    pokerGui->avatarImages = avatarImages; 
+}
+
+void setChipIcon(Poker_Gui* pokerGui, Icon* chipIcon){ 
+    if(!pokerGui){ 
+        printf("ERROR: poker gui is NULL\n"); 
+        return; 
+    }
+    pokerGui->chipIcon = chipIcon; 
+}
+
+void setPlayerInfo(Poker_Gui* pokerGui, Player_Info* playerInfo){ 
+    if(!pokerGui){ 
+        printf("ERROR: poker gui is NULL\n"); 
+        return; 
+    } 
+    pokerGui->playerInfo = playerInfo; 
+}
+
+void setPlayerName(Player_Info* playerInfo, const char* playerName){ 
+    if(!playerInfo){ 
+        printf("ERROR: player info is NULL\n"); 
+        return; 
+    } 
+    playerInfo->name = playerName; 
+}
+
+void setChipCount(Player_Info* playerInfo, int chipCount){ 
+    if(!playerInfo){ 
+        printf("ERROR: player info is NULL\n"); 
+        return; 
+    } 
+    playerInfo->chips = chipCount; 
+}
+
+void setAvatar(Player_Info* playerInfo, Icon* avatarImg){ 
+    if(!playerInfo){ 
+        printf("ERROR: player info is NULL\n"); 
+        return; 
+    } 
+    playerInfo->avatarImg = avatarImg; 
+}
+
+void setPlayerCards(Player_Info* playerInfo, Card* playerCards){ 
+    if(!playerInfo){ 
+        printf("ERROR: player info is NULL\n"); 
+        return; 
+    }
+    playerInfo->playerCards = playerCards; 
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void loadCss(GtkWidget* window, const char* CSS){ 
     GtkCssProvider* provider = gtk_css_provider_new(); 

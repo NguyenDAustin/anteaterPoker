@@ -4,7 +4,6 @@
 
 const char* CARDS_RESOURCES[MAX_CARDS] = {
     // Hearts
-    "resources/ace_of_hearts.png",
     "resources/two_of_hearts.png",
     "resources/three_of_hearts.png",
     "resources/four_of_hearts.png",
@@ -17,9 +16,9 @@ const char* CARDS_RESOURCES[MAX_CARDS] = {
     "resources/jack_of_hearts.png",
     "resources/queen_of_hearts.png",
     "resources/king_of_hearts.png",
+    "resources/ace_of_hearts.png",
 
     // Diamonds
-    "resources/ace_of_diamonds.png",
     "resources/two_of_diamonds.png",
     "resources/three_of_diamonds.png",
     "resources/four_of_diamonds.png",
@@ -32,9 +31,9 @@ const char* CARDS_RESOURCES[MAX_CARDS] = {
     "resources/jack_of_diamonds.png",
     "resources/queen_of_diamonds.png",
     "resources/king_of_diamonds.png",
+    "resources/ace_of_diamonds.png",
 
     // Clubs
-    "resources/ace_of_clubs.png",
     "resources/two_of_clubs.png",
     "resources/three_of_clubs.png",
     "resources/four_of_clubs.png",
@@ -47,9 +46,9 @@ const char* CARDS_RESOURCES[MAX_CARDS] = {
     "resources/jack_of_clubs.png",
     "resources/queen_of_clubs.png",
     "resources/king_of_clubs.png",
+    "resources/ace_of_clubs.png",
 
     // Spades
-    "resources/ace_of_spades.png",
     "resources/two_of_spades.png",
     "resources/three_of_spades.png",
     "resources/four_of_spades.png",
@@ -62,6 +61,7 @@ const char* CARDS_RESOURCES[MAX_CARDS] = {
     "resources/jack_of_spades.png",
     "resources/queen_of_spades.png",
     "resources/king_of_spades.png",
+    "resources/ace_of_spades.png",
 
     //Back of Card 
     "resources/back_of_card.png"
@@ -146,6 +146,11 @@ void scale(cairo_t *cr, Icon *img, float targetXSize, float targetYSize)
 
 void drawImg(cairo_t* cr, Icon *img, float xPos, float yPos, float targetW, float targetH)
 {
+    if(!img){
+        printf("ERROR: drawImg -  img is NULL\n"); 
+        return; 
+    } 
+
     cairo_save(cr);
     cairo_translate(cr, xPos,  yPos);  //center
     scale(cr, img, targetW, targetH); 
@@ -374,7 +379,7 @@ void drawPlayer6Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* p
 
 Icon* getCardImage(Icon** images, Card card){  //will deal with anteater cards later... cause idk what the anteater is
     int suit = card.suit; //
-    int index = suit * NUM_OF_RANKS + card.rank - 1; 
+    int index = suit * NUM_OF_RANKS + card.rank - 2;  //-2 b/c rank change for ace to 14
     return images[index]; 
 }
 
@@ -476,14 +481,29 @@ void drawRoundedBoxPath(cairo_t* cr, double x, double y, double boxWidth, double
     cairo_close_path(cr);
 }
 
+double getTextWidth(cairo_t* cr, const char* fontFace, const char* text, double fontSize){ 
+    double width; 
+    cairo_text_extents_t extents;
+    cairo_save(cr); 
 
+    cairo_select_font_face(cr, fontFace, CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
+    cairo_set_font_size(cr, fontSize);
+    cairo_text_extents(cr, text, &extents);
+    width = extents.width; 
+
+    cairo_restore(cr); 
+    return width; 
+}
+
+/*
 double getTextWidth(cairo_t* cr, const char* text){
     cairo_text_extents_t extents;
     cairo_text_extents(cr, text, &extents);
     return extents.width; 
 }
+    */
 
-double drawText(cairo_t* cr, const char* text, double fontSize, double xPos, double yPos){
+void drawText(cairo_t* cr, const char* text, double fontSize, double xPos, double yPos){ //add a color field
     cairo_save(cr); 
 
     cairo_set_source_rgb(cr, 0.95, 0.90, 0.80);
@@ -492,10 +512,10 @@ double drawText(cairo_t* cr, const char* text, double fontSize, double xPos, dou
     cairo_move_to(cr, xPos, yPos + fontSize);
     cairo_show_text(cr, text);
 
-    double textWidth = getTextWidth(cr, text);
+  //  double textWidth = getTextWidth(cr, text);
     cairo_restore(cr); 
 
-    return textWidth;  
+    //return textWidth;  
 }
 
 void drawAvatar(cairo_t* cr, Icon* avatarImg, double xPos, double yPos, double avatarWidth, double avatarHeight, double inset){ 
@@ -516,20 +536,23 @@ void drawPlayerInfoBox(cairo_t* cr, Poker_Gui* pokerGui, double xPos, double yPo
 
     //loading gui stuff
     GtkWidget* drawArea = pokerGui->pokerTable; 
-    Icon** images = pokerGui->images; 
+    Icon** images = getImages(pokerGui); 
 
     //loading player stuff
-    Player_Info* playerInfo = pokerGui->playerInfo; 
-    const char* playerName = playerInfo->name;  
-    Icon* avatarImg = playerInfo->avatarImg; 
-    Card* playerCards = playerInfo->playerCards; 
+    Player_Info* playerInfo = getPlayerInfo(pokerGui);
+    const char* playerName = getPlayerName(playerInfo);
+    Icon* avatarImg = getAvatar(playerInfo);
+    Card* playerCards = getPlayerCards(playerInfo);
 
     double areaW = gtk_widget_get_allocated_width(drawArea);
     double areaH = gtk_widget_get_allocated_height(drawArea); 
-    double boxWidth = areaW * 0.2; 
-    double boxHeight = boxWidth * 0.5; 
-    double cardW = boxWidth * 0.2; 
-    double cardH = cardW * 1.4; 
+
+    double boxHeight = areaH * 0.15; 
+    double boxWidth = boxHeight * 3; 
+
+    double cardH = boxHeight  * 0.6; 
+    double cardW = cardH * 0.71; 
+    
     double avatarHeight = boxHeight * 0.9;
     double avatarWidth = avatarHeight; 
     double topTextMargin = borderWidth + (boxHeight * 0.05); 
@@ -551,7 +574,7 @@ void drawPlayerInfoBox(cairo_t* cr, Poker_Gui* pokerGui, double xPos, double yPo
     cairo_set_line_width(cr, borderWidth); 
     cairo_stroke(cr);   
 
-    //draw the avatar photo 
+    //draw the avatar photo //
     double avatarYPos = getCenter(yPos + borderWidth, yPos + boxHeight - borderWidth) - (avatarHeight/2.0); 
     double avatarXPos = xPos + (boxHeight * 0.05); 
     drawAvatar(cr, avatarImg, avatarXPos, avatarYPos, avatarWidth, avatarHeight, 0); 
@@ -565,7 +588,8 @@ void drawPlayerInfoBox(cairo_t* cr, Poker_Gui* pokerGui, double xPos, double yPo
     double nameYPos = avatarYPos + topTextMargin;
     double nameXPos = avatarXPos + avatarWidth + leftTextMargin; 
     double playerFontSize = boxHeight * 0.15;  
-    playerTextWidth = drawText(cr, playerName, playerFontSize, nameXPos, nameYPos);  
+    playerTextWidth = getTextWidth(cr, "Sans", playerName, playerFontSize); 
+    drawText(cr, playerName, playerFontSize, nameXPos, nameYPos);  
 
 
     double chipYPos = nameYPos + boxHeight * 0.3; 
@@ -580,7 +604,10 @@ void drawPlayerInfoBox(cairo_t* cr, Poker_Gui* pokerGui, double xPos, double yPo
     cairo_restore(cr);
 
     //add the player chip count
-    chipTextWidth = drawText(cr, "CHIPS", chipFontSize, chipXPos + chipW, chipYPos); 
+    char chipText[32];
+    snprintf(chipText, sizeof(chipText), "CHIP %d", getChipCount(playerInfo));
+    chipTextWidth = getTextWidth(cr, "Sans", chipText, chipFontSize); 
+    drawText(cr, chipText, chipFontSize, chipXPos + chipW, chipYPos); 
 
     //add the cards 
     double cardYPos = getCenter(yPos + borderWidth, yPos + boxHeight - borderWidth) - (cardH/2.0); //center --> make helper function
@@ -589,6 +616,20 @@ void drawPlayerInfoBox(cairo_t* cr, Poker_Gui* pokerGui, double xPos, double yPo
     
     cairo_restore(cr);
 }
+
+void drawPot(cairo_t* cr, Poker_Gui* pokerGui){ 
+    GtkWidget* pokerTable = getPokerTable(pokerGui);
+    double tableH = getTableHeight(pokerTable); 
+    double targetH = tableH * 0.08; 
+    double targetW =  getTableWidth(pokerTable) * 0.15; 
+
+    double textWidth = getTextWidth(cr,  "Sans", "POT", targetH); 
+
+    double yPos = getTableTopEdge(pokerTable) + (tableH * 0.1);
+    double xPos = getCenter(getTableLeftEdge(pokerTable), getTableRightEdge(pokerTable)) - (textWidth / 2.0); 
+    
+    drawText(cr, "POT", targetH, xPos, yPos); 
+} 
 
 gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){
     Poker_Gui* pokerGui = (Poker_Gui*)user_data; 
@@ -629,6 +670,8 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){
 
     *(pokerGui->playerInfo) = (Player_Info){.name = "YOSHI", .chips = 1000, .avatarImg = avatarImg, .playerCards = player1Cards}; 
     drawPlayerInfoBox(cr, pokerGui, 100, 100); //draws the player's box 
+    drawPot(cr, pokerGui); 
+
 
     drawDealerCards(widget, cr, images, dealerCards, cardsToDeal); //cards to deal aka what turn
     drawPlayer1Cards(widget, cr, images, player1Cards); 
