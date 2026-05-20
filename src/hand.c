@@ -1,17 +1,17 @@
 #include <stdio.h>
 #include "hand.h"
 
-void init_hand(Hand *hand)
+void init_hand(Hand *hand) //initialize hand
 {
     hand->count = 0;
 }
 
-void clear_hand(Hand *hand)
+void clear_hand(Hand *hand) //clear hand
 {
     hand->count = 0;
 }
 
-Card deal_hand(Hand *hand, Card card)
+Card deal_hand(Hand *hand, Card card) //draw cards
 {
     if (hand->count >= HAND_SIZE) {
         printf("Error: hand is full.\n");
@@ -24,7 +24,26 @@ Card deal_hand(Hand *hand, Card card)
     return card;
 }
 
-void print_hand(Hand *hand)
+void draw_hand(Deck *deck, Hand *hand) //this is your array queency for hand
+{
+    clear_hand(hand);
+
+    for (int i = 0; i < HAND_SIZE; i++) {
+        deal_hand(hand, deal(deck));
+    }
+}
+
+void draw_board(Deck *deck, Card board[BOARD_SIZE])
+{
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        board[i] = deal(deck);
+    }
+}
+
+
+
+
+void print_hand(Hand *hand) //display for test
 {
     printf("Hand:\n");
 
@@ -34,7 +53,19 @@ void print_hand(Hand *hand)
     }
 }
 
-void combine_cards(Card combined[], Hand *hand, Card board[], int board_count)
+void print_board(Card board[BOARD_SIZE]) //display for test
+{
+    printf("Board:\n");
+
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        printf("Card %d: ", i + 1);
+        print_card(board[i]);
+    }
+}
+
+
+
+void combine_cards(Card combined[], Hand *hand, Card board[], int board_count) //for eval
 {
     int index = 0;
 
@@ -50,7 +81,7 @@ void combine_cards(Card combined[], Hand *hand, Card board[], int board_count)
 }
 
 
-void sort(Card cards[], int count)
+void sort(Card cards[], int count) //helper
 {
     for (int i = 0; i < count - 1; i++) {
 
@@ -343,8 +374,6 @@ int royalFlush(Card cards[], int count)
 
     return 0;
 }
-//hand eval
-//compare
 
 
 
@@ -470,8 +499,8 @@ int compare_hands(Card p1_hand[2], Card p2_hand[2], Card board[5])
     int p1_big = eval_points(p1_hand, board);
     int p2_big = eval_points(p2_hand, board);
 
-    int p1_small = eval_points(p1_hand);
-    int p2_small = eval_points(p2_hand);
+    int p1_small = eval_points(p1_hand, board);
+    int p2_small = eval_points(p2_hand, board);
 
     if (p1_big > p2_big){
         return 1; //player 1 wins
@@ -491,8 +520,3 @@ int compare_hands(Card p1_hand[2], Card p2_hand[2], Card board[5])
         return 0; //split the pot
     }
 }
-
-
-
-//need to work on anteater stuff
-//need to make it so that ACE can be 1 and 14

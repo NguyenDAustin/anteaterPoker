@@ -6,6 +6,8 @@
 #define BEST_HAND_SIZE 5
 #define TOTAL_HAND_CARDS 7
 #define HAND_SIZE 2
+#define BOARD_SIZE 5
+
 
 typedef struct {
     Card cards[2];
@@ -37,6 +39,10 @@ void init_hand(Hand *hand);
 Card deal_hand(Hand *hand, Card card);
 void clear_hand(Hand *hand);
 void print_hand(Hand *hand);
+
+//arrays for queency
+void draw_board(Deck *deck, Card board[BOARD_SIZE]);
+void print_board(Card board[BOARD_SIZE]);
 
 
 //check
