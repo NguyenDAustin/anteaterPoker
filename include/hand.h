@@ -43,7 +43,7 @@ void print_hand(Hand *hand);
 //arrays for queency
 void draw_board(Deck *deck, Card board[BOARD_SIZE]);
 void print_board(Card board[BOARD_SIZE]);
-
+void anteater_board(Deck *deck, Card board[BOARD_SIZE]);
 
 //check
 int eval_hand(Card player_cards[2]);
@@ -51,14 +51,13 @@ int eval_points(Card player_cards[2], Card board_cards[5]);
 
 //compare hands
 int compare_hands(Card p1_hand[2], Card p2_hand[2], Card board[5]);
+
 //helper functions
 int count_rank(Card cards[], int count, Rank rank);
 int count_suit(Card cards[], int count, Suit suit);
-int has_anteater(Card cards[], int count);
-int count_anteaters(Card cards[], int count);
 
 void sort(Card cards[], int count);
-
+Card best_anteater_card(Card player_cards[2], Card board_cards[5]);
 
 //checks wins
 int royalFlush(Card cards[], int count);

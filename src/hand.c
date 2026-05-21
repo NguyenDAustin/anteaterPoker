@@ -33,14 +33,25 @@ void draw_hand(Deck *deck, Hand *hand) //this is your array queency for hand
     }
 }
 
-void draw_board(Deck *deck, Card board[BOARD_SIZE])
+
+
+void draw_board(Deck *deck, Card board[BOARD_SIZE]) //this is your array queency but for the hand
 {
     for (int i = 0; i < BOARD_SIZE; i++) {
         board[i] = deal(deck);
     }
+
 }
 
-
+void anteater_board(Deck *deck, Card board[BOARD_SIZE]) //checks for anteater
+{
+    for (int i = 0; i < BOARD_SIZE; i++){
+        if (board[i].rank == ANTEATER_CARD){
+            draw_board(deck, board);
+        }
+    }
+    
+}
 
 
 void print_hand(Hand *hand) //display for test
@@ -406,30 +417,40 @@ int count_suit(Card cards[], int count, Suit suit)
     return total;
 }
 
-int has_anteater(Card cards[], int count)
+Card best_anteater_card(Card player_cards[2], Card board_cards[5])
 {
-    for (int i = 0; i < count; i++) {
+    Card best_card;
+    int best_points = -1;
 
-        if (cards[i].type == ANTEATER_CARD) {
-            return 1;
+    for (Suit suit = HEARTS; suit <= SPADES; suit++) {
+        for (Rank rank = TWO; rank <= ACE; rank++) {
+
+            Card test_card;
+            test_card.rank = rank;
+            test_card.suit = suit;
+            test_card.type = NORMAL_CARD;
+
+            Card temp_hand[2];
+            temp_hand[0] = player_cards[0];
+            temp_hand[1] = player_cards[1];
+
+            for (int i = 0; i < 2; i++) {
+                if (temp_hand[i].type == ANTEATER_CARD) {
+                    temp_hand[i] = test_card;
+                    break;
+                }
+            }
+
+            int points = eval_points(temp_hand, board_cards);
+
+            if (points > best_points) {
+                best_points = points;
+                best_card = test_card;
+            }
         }
     }
 
-    return 0;
-}
-
-int count_anteaters(Card cards[], int count)
-{
-    int total = 0;
-
-    for (int i = 0; i < count; i++) {
-
-        if (cards[i].type == ANTEATER_CARD) {
-            total++;
-        }
-    }
-
-    return total;
+    return best_card;
 }
 
 
