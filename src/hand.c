@@ -1,19 +1,17 @@
 #include <stdio.h>
 #include "hand.h"
 
-void init_hand(Hand *hand)
+void init_hand(Hand *hand) //initialize hand
 {
     hand->count = 0;
 }
 
-void clear_hand(Hand *hand)
+void clear_hand(Hand *hand) //clear hand
 {
     hand->count = 0;
 }
 
-//deal all cards first --> return as array (card*)
-
-Card deal_hand(Hand *hand, Card card)
+Card deal_hand(Hand *hand, Card card) //draw cards
 {
     if (hand->count >= HAND_SIZE) {
         printf("Error: hand is full.\n");
@@ -26,7 +24,37 @@ Card deal_hand(Hand *hand, Card card)
     return card;
 }
 
-void print_hand(Hand *hand)
+void draw_hand(Deck *deck, Hand *hand) //this is your array queency for hand
+{
+    clear_hand(hand);
+
+    for (int i = 0; i < HAND_SIZE; i++) {
+        deal_hand(hand, deal(deck));
+    }
+}
+
+
+
+void draw_board(Deck *deck, Card board[BOARD_SIZE]) //this is your array queency but for the hand
+{
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        board[i] = deal(deck);
+    }
+
+}
+
+void anteater_board(Deck *deck, Card board[BOARD_SIZE]) //checks for anteater
+{
+    for (int i = 0; i < BOARD_SIZE; i++){
+        if (board[i].rank == ANTEATER_CARD){
+            draw_board(deck, board);
+        }
+    }
+    
+}
+
+
+void print_hand(Hand *hand) //display for test
 {
     printf("Hand:\n");
 
@@ -36,7 +64,19 @@ void print_hand(Hand *hand)
     }
 }
 
-void combine_cards(Card combined[], Hand *hand, Card board[], int board_count)
+void print_board(Card board[BOARD_SIZE]) //display for test
+{
+    printf("Board:\n");
+
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        printf("Card %d: ", i + 1);
+        print_card(board[i]);
+    }
+}
+
+
+
+void combine_cards(Card combined[], Hand *hand, Card board[], int board_count) //for eval
 {
     int index = 0;
 
@@ -52,7 +92,7 @@ void combine_cards(Card combined[], Hand *hand, Card board[], int board_count)
 }
 
 
-void sort(Card cards[], int count)
+void sort(Card cards[], int count) //helper
 {
     for (int i = 0; i < count - 1; i++) {
 
@@ -100,7 +140,6 @@ int pairs(Card cards[], int count)
 
             temp++;
 
-            // skip duplicate card pairs
             i++;
         }
     }
@@ -133,31 +172,64 @@ int three(Card cards[], int count)
 
 int straight(Card cards[], int count)
 {
-    int temp = 1;
+    sort(cards, count);
+
+    int streak = 1;
 
     for (int i = 0; i < count - 1; i++) {
 
-        if (cards[i].type == ANTEATER_CARD) {
-            continue;
-        }
-
-        // skip duplicate ranks
+        // skip duplicates
         if (cards[i].rank == cards[i + 1].rank) {
             continue;
         }
 
-        // consecutive cards
         if (cards[i + 1].rank == cards[i].rank + 1) {
 
-            temp++;
+            streak++;
 
-            if (temp >= 5) {
+            if (streak >= 5) {
                 return 1;
             }
         }
         else {
-            temp = 1;
+            streak = 1;
         }
+    }
+
+    // A 2 3 4 5 case
+
+    int has_ace = 0;
+    int has_two = 0;
+    int has_three = 0;
+    int has_four = 0;
+    int has_five = 0;
+
+    for (int i = 0; i < count; i++) {
+
+        if (cards[i].rank == ACE) {
+            has_ace = 1;
+        }
+        else if (cards[i].rank == TWO) {
+            has_two = 1;
+        }
+        else if (cards[i].rank == THREE) {
+            has_three = 1;
+        }
+        else if (cards[i].rank == FOUR) {
+            has_four = 1;
+        }
+        else if (cards[i].rank == FIVE) {
+            has_five = 1;
+        }
+    }
+
+    if (has_ace &&
+        has_two &&
+        has_three &&
+        has_four &&
+        has_five) {
+
+        return 1;
     }
 
     return 0;
@@ -233,27 +305,21 @@ int four(Card cards[], int count)
 int straightFlush(Card cards[], int count)
 {
     Card suited_cards[7];
-    int suited_count = 0;
+    int suited_count;
 
     Suit suits[] = { HEARTS, DIAMONDS, CLUBS, SPADES };
 
     for (int s = 0; s < 4; s++) {
-
         suited_count = 0;
 
-        //one suit
         for (int i = 0; i < count; i++) {
-
             if (cards[i].suit == suits[s]) {
-
                 suited_cards[suited_count] = cards[i];
                 suited_count++;
             }
         }
 
-        //flush
         if (suited_count >= 5) {
-
             if (straight(suited_cards, suited_count)) {
                 return 1;
             }
@@ -319,8 +385,6 @@ int royalFlush(Card cards[], int count)
 
     return 0;
 }
-//hand eval
-//compare
 
 
 
@@ -353,30 +417,40 @@ int count_suit(Card cards[], int count, Suit suit)
     return total;
 }
 
-int has_anteater(Card cards[], int count)
+Card best_anteater_card(Card player_cards[2], Card board_cards[5])
 {
-    for (int i = 0; i < count; i++) {
+    Card best_card;
+    int best_points = -1;
 
-        if (cards[i].type == ANTEATER_CARD) {
-            return 1;
+    for (Suit suit = HEARTS; suit <= SPADES; suit++) {
+        for (Rank rank = TWO; rank <= ACE; rank++) {
+
+            Card test_card;
+            test_card.rank = rank;
+            test_card.suit = suit;
+            test_card.type = NORMAL_CARD;
+
+            Card temp_hand[2];
+            temp_hand[0] = player_cards[0];
+            temp_hand[1] = player_cards[1];
+
+            for (int i = 0; i < 2; i++) {
+                if (temp_hand[i].type == ANTEATER_CARD) {
+                    temp_hand[i] = test_card;
+                    break;
+                }
+            }
+
+            int points = eval_points(temp_hand, board_cards);
+
+            if (points > best_points) {
+                best_points = points;
+                best_card = test_card;
+            }
         }
     }
 
-    return 0;
-}
-
-int count_anteaters(Card cards[], int count)
-{
-    int total = 0;
-
-    for (int i = 0; i < count; i++) {
-
-        if (cards[i].type == ANTEATER_CARD) {
-            total++;
-        }
-    }
-
-    return total;
+    return best_card;
 }
 
 
@@ -446,8 +520,8 @@ int compare_hands(Card p1_hand[2], Card p2_hand[2], Card board[5])
     int p1_big = eval_points(p1_hand, board);
     int p2_big = eval_points(p2_hand, board);
 
-    int p1_small = eval_points(p1_hand);
-    int p2_small = eval_points(p2_hand);
+    int p1_small = eval_points(p1_hand, board);
+    int p2_small = eval_points(p2_hand, board);
 
     if (p1_big > p2_big){
         return 1; //player 1 wins
@@ -467,8 +541,3 @@ int compare_hands(Card p1_hand[2], Card p2_hand[2], Card board[5])
         return 0; //split the pot
     }
 }
-
-
-
-//need to work on anteater stuff
-//need to make it so that ACE can be 1 and 14
