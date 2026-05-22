@@ -76,19 +76,36 @@ const char* AVATAR_RESOURCES[MAX_PLAYERS] = {
     "resources/avatars/avatar6_img.png"
 };
 
-#define MAX_PLAYER_CARDS 2
-#define MAX_DEALER_CARDS 5
-#define BACK_CARD_INDEX 56
+//#define MAX_PLAYER_CARDS 2
+//#define MAX_DEALER_CARDS 5
+//#define BACK_CARD_INDEX 56
+
+#define PLAYER_1 0 
+#define PLAYER_2 1 
+#define PLAYER_3 2 
+#define PLAYER_4 3 
+#define PLAYER_5 4
+#define PLAYER_6 5
+
+const char* PIXEL_FONT = "VT323";
+const char* PIXEL_FONT2 = "Silkscreen"; 
 
 const double TABLE_WIDTH_PERCENTAGE = 0.70; 
 const double TABLE_HEIGHT_PERCENTAGE = 0.55; 
 
+const Color TURN_HIGHLIGHT_COLOR = {.r = 227/255.0, .g = 161/255.0, .b = 59/255.0}; 
+const Color CHIP_COUNT_TEXT_COLOR = {.r = 233/255.0, .g = 89/255.0, .b = 75/255.0};             //bright red color
 const Color PLAYER_TEXT_COLOR = {.r = 241/255.0, .g = 230/255.0, .b = 207/255.0};               //light yellow color
 const Color POT_COLOR = {.r = 108/255.0, .g = 161/255.0, .b = 133/255.0};                       //light green color
 const Color TABLE_INNER_OUTLINE_COLOR = {.r = 108/255.0, .g = 161/255.0, .b = 133/255.0};       //light green color
 const Color TABLE_COLOR = {.r = 86/255.0, .g = 134/255.0, .b = 111/255.0};                      //saturated green color 
 const Color TABLE_RAIL_COLOR = {.r = 149/255.0, .g = 121/255.0, .b = 79/255.0};                 //wooden color 
 const Color TABLE_INNER_SHADOW_COLOR = {.r = 58/255.0, .g = 115/255.0, .b = 88/255.0};          //darker green color
+const Color PLAYER_BOX_COLOR = {.r = 19/255.0, .g = 21/255.0, .b = 28/255.0}; 
+const Color PLAYER_BOX_BORDER_COLOR = {.r = 71/255.0, .g = 64/255.0, .b = 81/255.0}; 
+const Color AVATAR_BOX_BORDER_COLOR = {.r = 109/255, .g = 100/255.0, .b = 123/255.0};
+
+
 
 typedef cairo_surface_t Icon; 
 
@@ -220,12 +237,12 @@ double getTableBotEdge(GtkWidget* pokerTable){
 
 double getCardWidth(GtkWidget *pokerTable)
 {
-    return getTableWidth(pokerTable) * 0.065;
+   return getTableWidth(pokerTable) * 0.03; 
 }
 
 double getCardHeight(GtkWidget *pokerTable)
 {
-    return getCardWidth(pokerTable) * 1.4;
+   return getCardWidth(pokerTable) * 1.4;
 }
 
 double getDealerCardWidth(GtkWidget* pokerTable){ 
@@ -253,6 +270,18 @@ double getCardGroupWidth(GtkWidget *pokerTable, int numCards)
 void drawCards(cairo_t* cr, Icon** images, int numOfCards, Card* playerCards, double width, double height, double xPos, double yPos){ 
     Icon* image; 
     double gap = 1.5; 
+
+    if(!images){ 
+        printf("ERROR: images is NULL\n"); 
+        return; 
+    }
+    
+    if(!playerCards){ 
+        drawHiddenCards(cr, images, xPos, yPos, width, height); 
+        return; 
+    }
+
+
     for(int i = 0; i < numOfCards; i++){ 
         image = getCardImage(images, playerCards[i]); 
         drawImg(cr, image, xPos, yPos, width, height);  
@@ -263,6 +292,7 @@ void drawCards(cairo_t* cr, Icon** images, int numOfCards, Card* playerCards, do
 
 void drawHiddenCards(cairo_t* cr, Icon** images, float xPos, float yPos, float targetW, float targetH){ 
     Icon* cardBack = images[BACK_CARD_INDEX]; 
+    double gap = 1.5; 
     for(int i = 0; i < MAX_PLAYER_CARDS; i++){ 
         drawImg(cr, cardBack, xPos, yPos, targetW, targetH); 
         xPos = getNextPos(xPos, targetW); 
@@ -306,6 +336,16 @@ void drawDealerCards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* de
     drawCards(cr, images, MAX_DEALER_CARDS, dealerCards, targetW, targetH, xPos, yPos); 
 }
 
+double getTableVerticalPadding(GtkWidget* pokerTable){ 
+    double tableH = getTableHeight(pokerTable); 
+    return (tableH * 0.2); 
+}
+
+double getTableHorizontalPadding(GtkWidget* pokerTable){ 
+    double tableW = getTableWidth(pokerTable);
+    return (tableW * 0.3); 
+}
+
 void drawPlayer1Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards)
 { 
     double tableLeft = getTableLeftEdge(pokerTable);
@@ -313,24 +353,26 @@ void drawPlayer1Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* p
     double tableW = getTableWidth(pokerTable);
     double tableH = getTableHeight(pokerTable);
 
-    double cardH = getCardHeight(pokerTable);
+    double xCenter = tableLeft + getTableHorizontalPadding(pokerTable);
+    double y = tableBot - getTableVerticalPadding(pokerTable); 
 
-    double xCenter = tableLeft + tableW * 0.30;
-    double y = tableBot + tableH * 0.08;
+    Seat_Info player1 = {xCenter, y};
+    drawCards(cr, images, MAX_PLAYER_CARDS, playerCards, getCardWidth(pokerTable), getCardHeight(pokerTable), xCenter, y); 
 
-    Seat_Info player1 = {xCenter, y}; 
-    drawPlayerCards(cr, pokerTable, images, playerCards, &player1); 
+    //drawPlayerCards(cr, pokerTable, images, playerCards, &player1); 
 }
 
 void drawPlayer2Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards)
 { 
-    double tableLeft = getTableLeftEdge(pokerTable);
+    //double tableLeft = getTableLeftEdge(pokerTable);
+    double tableRight = getTableRightEdge(pokerTable); 
     double tableBot = getTableBotEdge(pokerTable);
     double tableW = getTableWidth(pokerTable);
     double tableH = getTableHeight(pokerTable);
 
-    double xCenter = tableLeft + tableW * 0.70;
-    double y = tableBot + tableH * 0.08;
+    //double xCenter = tableLeft + tableW * 0.70;
+    double xCenter = tableRight - getTableHorizontalPadding(pokerTable); 
+    double y = tableBot - getTableVerticalPadding(pokerTable);
 
     Seat_Info player2 = {xCenter, y};  
     drawPlayerCards(cr, pokerTable, images, playerCards, &player2); 
@@ -342,7 +384,7 @@ void drawPlayer3Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* p
     double tableTop = getTableTopEdge(pokerTable);
     double tableH = getTableHeight(pokerTable);
 
-    double xCenter = tableRight + getCardGroupWidth(pokerTable, 2) / 2.0 + 25;
+    double xCenter = tableRight - getCardGroupWidth(pokerTable, 2) / 2.0 + 25;
     double y = tableTop + tableH * 0.50 - getCardHeight(pokerTable) / 2.0;
 
     Seat_Info player3 = {xCenter, y}; 
@@ -351,15 +393,17 @@ void drawPlayer3Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* p
 
 void drawPlayer4Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards)
 { 
-    double tableLeft = getTableLeftEdge(pokerTable);
+    //double tableLeft = getTableLeftEdge(pokerTable);
+    double tableRight = getTableRightEdge(pokerTable); 
     double tableTop = getTableTopEdge(pokerTable);
     double tableW = getTableWidth(pokerTable);
     double tableH = getTableHeight(pokerTable);
 
     double cardH = getCardHeight(pokerTable);
 
-    double xCenter = tableLeft + tableW * 0.70;
-    double y = tableTop - cardH - tableH * 0.08;
+    //double xCenter = tableLeft + tableW * 0.70;  
+    double xCenter = tableRight - getTableHorizontalPadding(pokerTable); 
+    double y = tableTop - cardH - getTableVerticalPadding(pokerTable);
 
     Seat_Info player4 = {xCenter, y};   
     drawPlayerCards(cr, pokerTable, images, playerCards, &player4); 
@@ -374,8 +418,8 @@ void drawPlayer5Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* p
 
     double cardH = getCardHeight(pokerTable);
 
-    double xCenter = tableLeft + tableW * 0.30;
-    double y = tableTop - cardH - tableH * 0.08;
+    double xCenter = tableLeft + getTableHorizontalPadding(pokerTable);
+    double y = tableTop - cardH - getTableVerticalPadding(pokerTable);
 
     Seat_Info player5 = {xCenter, y}; 
     drawPlayerCards(cr, pokerTable, images, playerCards, &player5); 
@@ -387,7 +431,8 @@ void drawPlayer6Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* p
     double tableTop = getTableTopEdge(pokerTable);
     double tableH = getTableHeight(pokerTable);
 
-    double xCenter = tableLeft - getCardGroupWidth(pokerTable, 2) / 2.0 - 25;
+    double xCenter = tableLeft + getCardGroupWidth(pokerTable, 2) / 2.0 - 25;
+    //double xCenter = tableLeft + getTableHorizontalPadding(pokerTable); 
     double y = tableTop + tableH * 0.50 - getCardHeight(pokerTable) / 2.0;
 
     Seat_Info player6 = {xCenter, y}; 
@@ -461,42 +506,6 @@ void drawTableOutline(cairo_t *cr, int areaW, int areaH)
     cairo_restore(cr);
 }
 
-void drawRoundedBoxPath(cairo_t* cr, double x, double y, double boxWidth, double boxHeight)
-{
-    double r = 8.0; // corner radius
-
-    cairo_new_path(cr);
-
-    // Start at top-left, after the corner
-    cairo_move_to(cr, x + r, y);
-
-    // Top edge
-    cairo_line_to(cr, x + boxWidth - r, y);
-
-    // Top-right corner
-    cairo_arc(cr, x + boxWidth - r, y + r, r, -G_PI / 2.0, 0);
-
-    // Right edge
-    cairo_line_to(cr, x + boxWidth, y + boxHeight- r);
-
-    // Bottom-right corner
-    cairo_arc(cr, x + boxWidth - r, y + boxHeight - r, r, 0, G_PI / 2.0);
-
-    // Bottom edge
-    cairo_line_to(cr, x + r, y + boxHeight);
-
-    // Bottom-left corner
-    cairo_arc(cr, x + r, y + boxHeight - r, r, G_PI / 2.0, G_PI);
-
-    // Left edge
-    cairo_line_to(cr, x, y + r);
-
-    // Top-left corner
-    cairo_arc(cr, x + r, y + r, r, G_PI, 3.0 * G_PI / 2.0);
-
-    cairo_close_path(cr);
-}
-
 double getTextWidth(cairo_t* cr, const char* fontFace, const char* text, double fontSize){ 
     double width; 
     cairo_text_extents_t extents;
@@ -515,7 +524,7 @@ void drawText(cairo_t* cr, const Color textColor, const char* text, double fontS
     cairo_save(cr); 
 
     cairo_set_source_rgb(cr, getRed(textColor), getGreen(textColor), getBlue(textColor));
-    cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
+    cairo_select_font_face(cr, PIXEL_FONT, CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
     cairo_set_font_size(cr, fontSize);
     cairo_move_to(cr, xPos, yPos + fontSize);
     cairo_show_text(cr, text);
@@ -523,113 +532,31 @@ void drawText(cairo_t* cr, const Color textColor, const char* text, double fontS
     cairo_restore(cr); 
 }
 
-void drawAvatar(cairo_t* cr, Icon* avatarImg, double xPos, double yPos, double avatarWidth, double avatarHeight, double inset){ 
-    cairo_save(cr);  
-    drawRoundedBoxPath(cr, xPos + inset, yPos + inset, avatarWidth, avatarHeight); 
-    cairo_clip(cr);
-    drawImg(cr, avatarImg, xPos + inset, yPos+inset, avatarWidth, avatarHeight);  
-    cairo_restore(cr);; 
-}
-
 double getCenter(double top, double bot){ 
     return (top + bot) * 0.5; 
 }
+
 
 //right of player info box
 //left of player info box 
 //top of player info box 
 //bot of player info box
 
-void drawPlayerInfoBox(cairo_t* cr, Poker_Gui* pokerGui, double xPos, double yPos){ //the x and y pos that you want to start drawing at (left corner)
-    int borderWidth = 3.0;
-    int avatarBorderWidth = borderWidth * 0.5;  
-
-    //loading gui stuff
-    GtkWidget* drawArea = pokerGui->pokerTable; 
-    Icon** images = getImages(pokerGui); 
-
-    //loading player stuff
-    Player_Info* playerInfo = getPlayerInfo(pokerGui);
-    const char* playerName = getPlayerName(playerInfo);
-    Icon* avatarImg = getAvatar(playerInfo);
-    Card* playerCards = getPlayerCards(playerInfo);
-
-    double areaW = gtk_widget_get_allocated_width(drawArea);
-    double areaH = gtk_widget_get_allocated_height(drawArea); 
-
-    double boxHeight = areaH * 0.15; 
-    double boxWidth = boxHeight * 3; 
-
-    double cardH = boxHeight  * 0.6; 
-    double cardW = cardH * 0.71; 
-    
-    double avatarHeight = boxHeight * 0.9;
-    double avatarWidth = avatarHeight; 
-    double topTextMargin = borderWidth + (boxHeight * 0.05); 
-    double leftTextMargin = borderWidth + (boxWidth * 0.05); 
-
-    double playerTextWidth; 
-    double chipTextWidth; 
-
-    double sidePadding = boxHeight * 0.05; 
-
-    cairo_save(cr); 
-
-    drawRoundedBoxPath(cr, xPos, yPos, boxWidth, boxHeight);  //xPos and yPos is top left corner
-
-    //fill the box
-    cairo_set_source_rgba(cr, 19/255.0, 21/255.0, 28/255.0, 1);  
-    cairo_fill_preserve(cr);
-
-    //draw player box border
-    cairo_set_source_rgba(cr, 71/255.0, 64/255.0, 81/255.0, 1); 
-    cairo_set_line_width(cr, borderWidth); 
-    cairo_stroke(cr);   
-
-    //draw the avatar photo //
-    double avatarYPos = getCenter(yPos + borderWidth, yPos + boxHeight - borderWidth) - (avatarHeight/2.0); 
-    double avatarXPos = xPos + sidePadding; 
-    drawAvatar(cr, avatarImg, avatarXPos, avatarYPos, avatarWidth, avatarHeight, 0); 
-
-    //draw avatar border 
-    drawRoundedBoxPath(cr, avatarXPos, avatarYPos, avatarWidth, avatarHeight); 
+void drawBorder(cairo_t* cr, Color borderColor, double borderWidth, double width, double height, double xPos, double yPos){
+    cairo_save(cr);
+    drawRoundedBoxPath(cr, xPos, yPos, width, height);  
+    cairo_set_source_rgba(cr, getRed(borderColor), getGreen(borderColor), getBlue(borderColor), 1); 
     cairo_set_line_width(cr, borderWidth); 
     cairo_stroke(cr);  
-
-    //add the player name 
-    double nameYPos = avatarYPos + topTextMargin;
-    double nameXPos = avatarXPos + avatarWidth + leftTextMargin; 
-    double playerFontSize = boxHeight * 0.15;  
-    playerTextWidth = getTextWidth(cr, "Sans", playerName, playerFontSize); 
-    drawText(cr, PLAYER_TEXT_COLOR, playerName, playerFontSize, nameXPos, nameYPos);  
-
-
-    double chipYPos = nameYPos + boxHeight * 0.3; 
-    double chipXPos = avatarXPos + avatarWidth + leftTextMargin; 
-    double chipFontSize = boxHeight * 0.08;  
-    double chipH = boxHeight * 0.1; 
-    double chipW = chipH;
-
-    //draw chip icon
-    cairo_save(cr); 
-    drawImg(cr, pokerGui->chipIcon, chipXPos, chipYPos, chipW, chipH); 
-    cairo_restore(cr);
-
-    //add the player chip count
-    char chipText[32];
-    snprintf(chipText, sizeof(chipText), "CHIPS %d", getChipCount(playerInfo));
-    chipTextWidth = getTextWidth(cr, "Sans", chipText, chipFontSize); 
-    drawText(cr, PLAYER_TEXT_COLOR, chipText, chipFontSize, chipXPos + chipW + 1.0, chipYPos); 
-
-    //add the cards -
-    double cardsTotalW = MAX_PLAYER_CARDS * cardW + (MAX_PLAYER_CARDS - 1) * getCardGap(drawArea);
-    double cardYPos = getCenter(yPos + borderWidth, yPos + boxHeight - borderWidth) - (cardH/2.0); //center --> make helper function
-   // double cardXPos = (playerTextWidth > chipTextWidth) ? (nameXPos + playerTextWidth + 5.0) : (chipXPos + chipTextWidth + 5.0); 
-    double cardXPos = xPos + boxWidth - cardsTotalW - sidePadding;  //card width //double cardsTotalW = MAX_PLAYER_CARDS * cardW + (MAX_PLAYER_CARDS - 1) * cardGap;
-    drawCards(cr, images, MAX_PLAYER_CARDS, playerCards, cardW, cardH, cardXPos, cardYPos); 
-    
-    cairo_restore(cr);
+    cairo_restore(cr); 
 }
+
+
+void drawTurnHighlight(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, double xPos, double yPos){
+    double width = 2.0; 
+    drawBorder(cr, PLAYER_TEXT_COLOR, width, getPlayerBoxWidth(getPokerTable(pokerGui)), getPlayerBoxHeight(getPokerTable(pokerGui)), xPos, yPos); 
+}
+
 
 void drawPot(cairo_t* cr, Poker_Gui* pokerGui){ 
     GtkWidget* pokerTable = getPokerTable(pokerGui);
@@ -637,15 +564,123 @@ void drawPot(cairo_t* cr, Poker_Gui* pokerGui){
     double targetH = tableH * 0.08; 
     double targetW =  getTableWidth(pokerTable) * 0.15; 
 
-    double textWidth = getTextWidth(cr,  "Sans", "POT", targetH); 
+    double textWidth = getTextWidth(cr, PIXEL_FONT, "POT", targetH); 
 
     double yPos = getTableTopEdge(pokerTable) + (tableH * 0.1);
     double xPos = getCenter(getTableLeftEdge(pokerTable), getTableRightEdge(pokerTable)) - (textWidth / 2.0); 
+
+
+    //drawing pot label
+    drawText(cr, POT_COLOR, "POT", targetH, xPos, yPos);  
+
+    //drawing pot amount
+    char pot[MAX_NUMBER_LENGTH];
+    moneyBuilder(pot, getPot(pokerGui));
+    double potFontSize = targetH * 0.85; 
+    textWidth = getTextWidth(cr, PIXEL_FONT, pot, potFontSize); 
+    double potXPos = getCenter(getTableLeftEdge(pokerTable), getTableRightEdge(pokerTable)) - (textWidth/2.0); 
+    double potYPos = yPos + tableH * 0.1; 
+    drawText(cr, POT_COLOR, pot, potFontSize, potXPos, potYPos); 
+}
+
+
+double getPBoxHorizPadding(GtkWidget* pokerTable){ 
+    return getTableWidth(pokerTable) * 0.2; 
+}
+
+double getPBoxVertPadding(GtkWidget* pokerTable){ 
+    return getTableHeight(pokerTable) * 0.25; 
+}
+
+
+Seat_Info getPlayer1Seat(GtkWidget* pokerTable){ 
+    double playerBoxWidth = getPlayerBoxWidth(pokerTable); 
+    double playerBoxHeight = getPlayerBoxHeight(pokerTable); 
+
+    double xPos = getTableLeftEdge(pokerTable) + getPBoxHorizPadding(pokerTable) - (playerBoxWidth/2.0); 
+    double yPos = getTableBotEdge(pokerTable) + getPBoxVertPadding(pokerTable) - (playerBoxHeight/2.0);   
+
+    Seat_Info seatInfo = {.xPos = xPos, .yPos = yPos}; 
+    return seatInfo; 
+}
+
+Seat_Info getPlayer2Seat(GtkWidget* pokerTable){
+    double playerBoxWidth = getPlayerBoxWidth(pokerTable); 
+    double playerBoxHeight = getPlayerBoxHeight(pokerTable); 
+
+    double xPos = getTableRightEdge(pokerTable) - getPBoxHorizPadding(pokerTable) - (playerBoxWidth/2.0); 
+    double yPos = getTableBotEdge(pokerTable) + getPBoxVertPadding(pokerTable) - (playerBoxHeight/2.0); 
+
+    Seat_Info seatInfo = {.xPos = xPos, .yPos = yPos}; 
+    return seatInfo; 
+}
+
+
+Seat_Info getPlayer3Seat(GtkWidget* pokerTable){ 
+    double playerBoxWidth = getPlayerBoxWidth(pokerTable); 
+    double playerBoxHeight = getPlayerBoxHeight(pokerTable); 
+
+    double xPos = getTableRightEdge(pokerTable) - playerBoxWidth/2.0; 
+    double yPos = getCenter(getTableTopEdge(pokerTable), getTableBotEdge(pokerTable)) - playerBoxHeight/2.0; 
+
+    Seat_Info seatInfo = {.xPos = xPos, .yPos = yPos}; 
+    return seatInfo; 
+}
+
+Seat_Info getPlayer4Seat(GtkWidget* pokerTable){ 
+    double playerBoxWidth = getPlayerBoxWidth(pokerTable);  
+    double playerBoxHeight = getPlayerBoxHeight(pokerTable); 
+
+    double xPos = getTableRightEdge(pokerTable) - getPBoxHorizPadding(pokerTable) - playerBoxWidth/2.0; 
+    double yPos = getTableTopEdge(pokerTable) - getPBoxVertPadding(pokerTable)  - playerBoxHeight/2.0; 
+
+    Seat_Info seatInfo = {.xPos = xPos, .yPos = yPos}; 
+    return seatInfo;
+}
+
+Seat_Info getPlayer5Seat(GtkWidget* pokerTable){ 
+    double playerBoxWidth = getPlayerBoxWidth(pokerTable); 
+    double playerBoxHeight = getPlayerBoxHeight(pokerTable); 
+
+    double xPos = getTableLeftEdge(pokerTable) + getPBoxHorizPadding(pokerTable) - playerBoxWidth/2.0;  //and then subtract the width of my playerBox?
+    double yPos = getTableTopEdge(pokerTable) - getPBoxVertPadding(pokerTable) - playerBoxHeight/2.0; 
     
-    drawText(cr, POT_COLOR, "POT", targetH, xPos, yPos); 
-} 
+    Seat_Info seatInfo = {.xPos = xPos, .yPos = yPos}; 
+    return seatInfo;
+}
+
+Seat_Info getPlayer6Seat(GtkWidget* pokerTable){
+    double playerBoxWidth = getPlayerBoxWidth(pokerTable); 
+    double playerBoxHeight = getPlayerBoxHeight(pokerTable); 
+
+    double xPos = getTableLeftEdge(pokerTable) - playerBoxWidth/2.0; 
+    double yPos = getCenter(getTableTopEdge(pokerTable), getTableBotEdge(pokerTable)) - playerBoxHeight/2.0; 
+
+    Seat_Info seatInfo = {.xPos = xPos, .yPos = yPos}; 
+    return seatInfo;
+}
+
+void intializePlayerSeats(GtkWidget* pokerTable, Seat_Info* seats){
+    seats[PLAYER_1] = getPlayer1Seat(pokerTable); 
+    seats[PLAYER_2] = getPlayer2Seat(pokerTable); 
+    seats[PLAYER_3] = getPlayer3Seat(pokerTable); 
+    seats[PLAYER_4] = getPlayer4Seat(pokerTable); 
+    seats[PLAYER_5] = getPlayer5Seat(pokerTable); 
+    seats[PLAYER_6] = getPlayer6Seat(pokerTable); 
+}
+
+void updatePlayersInfo(Poker_Gui* pokerGui, int* chips, Card** playerCards){
+    printf("updating players info\n");
+    Player_Info** playerInfo = getAllPlayersInfo(pokerGui); 
+
+    for(int i = 0; i < MAX_PLAYERS; i++){ 
+        setChipCount(playerInfo, chips[i], i); 
+        setPlayerCards(playerInfo, playerCards[i], i);
+    }
+}
 
 gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){
+    printf("drawing poker table\n");
     Poker_Gui* pokerGui = (Poker_Gui*)user_data; 
     Icon** images = pokerGui->images;  
     Icon* avatarImg = pokerGui->avatarImages[0]; 
@@ -663,11 +698,35 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){
     ////////////////////////////////////////////////////
 
     //temp solu for testing --> future player cards should be passed in from user_data //////////////////////////
-
     card1 = cardCtor(CLUBS, THREE); 
     card2 = cardCtor(HEARTS, FOUR); 
+    Card player1Cards[MAX_PLAYER_CARDS] = {card1, card2}; 
+    
+    card1 = cardCtor(SPADES, KING); 
+    card2 = cardCtor(CLUBS, TWO); 
+    Card player2Cards[MAX_PLAYER_CARDS] = {card1, card2};
 
-    Card player1Cards[MAX_PLAYER_CARDS] = {card1, card2};  
+    card1 = cardCtor(HEARTS, SEVEN); 
+    card2 = cardCtor(HEARTS, THREE); 
+    Card player3Cards[MAX_PLAYER_CARDS] = {card1, card2};
+
+    Card* player4Cards = NULL;
+
+    Card* player5Cards = NULL; 
+
+    card1 = cardCtor(DIAMONDS, KING); 
+    card2 = cardCtor(HEARTS, FOUR); 
+    Card player6Cards[MAX_PLAYER_CARDS] = {card1, card2}; 
+
+    Card* playerCards[MAX_PLAYERS] = {player1Cards, player2Cards, player3Cards, player4Cards, player5Cards, player6Cards}; 
+   
+    //////////////////////////////////////////////////////
+
+    //temp solu for testing --> in future server should update my player's chip counts automatically
+    int chips[MAX_PLAYERS] = {1000, 200, 1091, 4583, 8921, 102000}; 
+    updatePlayersInfo(pokerGui,chips, playerCards); 
+    printf("finished updating player info\n");
+
     ///zrrzy of card arrays --? depending on which player initialize that card array --> rest is auto NULL and thus won't be drawn
 
     ////////////////////////////////////////////////////
@@ -676,25 +735,35 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){
     int areaHeight = gtk_widget_get_allocated_height(widget);
     drawTableOutline(cr, areaWidth, areaHeight);
 
-    //temp solu just for testing 
-    /* char* name; 
-    int chips; 
-    Icon* avatarImg; 
-    Card* playerCards; */ 
+    pokerGui->pokerTable = widget; 
 
-    *(pokerGui->playerInfo) = (Player_Info){.name = "YOSHI", .chips = 1000, .avatarImg = avatarImg, .playerCards = player1Cards};  
-    drawPlayerInfoBox(cr, pokerGui, 100, 100); //draws the player's box 
+    //drawing pot
+    setPot(pokerGui, 152079531); 
     drawPot(cr, pokerGui); 
-
-
     drawDealerCards(widget, cr, images, dealerCards, cardsToDeal); //cards to deal aka what turn
+
+    //drawing player cards --> will change design to for loop later 
+    /*
     drawPlayer1Cards(widget, cr, images, player1Cards); 
     drawPlayer2Cards(widget, cr, images, NULL); 
     drawPlayer3Cards(widget, cr, images, player1Cards);
     drawPlayer4Cards(widget, cr, images, NULL); 
     drawPlayer5Cards(widget, cr, images, NULL); 
     drawPlayer6Cards(widget, cr, images, player1Cards);
+    */
 
+    printf("finished drawing cards\n");
+
+    //drawing player boxes 
+    Seat_Info seats[MAX_PLAYERS]; 
+    intializePlayerSeats(widget, seats);
+
+    printf("finished initializing player seats\n"); 
+
+    drawPlayerBoxes(cr, widget, pokerGui, seats); 
+    drawTurnHighlight(cr, widget, pokerGui, seats[PLAYER_2].xPos, seats[PLAYER_2].yPos); //what about to remove highlight ?
+
+    printf("finished drawing player boxes\n");
 
     //if end turn draw everyone's cards 
 
@@ -704,7 +773,6 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){
 
     //need to add some style to the button box
     //dealer character ? --> w/ dialogue ?
-
 }
 
 

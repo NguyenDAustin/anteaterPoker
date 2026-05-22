@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
             bzero(buffer,256);
             fgets(buffer,255,stdin); 
         
-        n = write(sockfd,buffer,strlen(buffer));
+        n = write(sockfd,buffer,strlen(buffer)); //returns number of bytes written
 
         if (n < 0) 
             error("ERROR writing to socket");

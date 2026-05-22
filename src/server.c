@@ -119,7 +119,10 @@ int main(int argc, char *argv[])
 
     printf("WE ARE RUNNING THE NEW VERSION\n"); 
 
-    int clientSockets[MAX_PLAYERS]; 
+    int clientSockets[MAX_PLAYERS]; //whoever joins first is player 1, whoever joins first is player 2 
+                                    //this socket --> is PLAYER 1 or PLAYER 2  --> communicate to me 
+
+                                    
     int serverSocket, portno;
     struct sockaddr_in serv_addr; 
 

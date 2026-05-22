@@ -1,15 +1,16 @@
 #ifndef RENDER_H 
 #define RENDER_H 
 
+#include <gtk/gtk.h>
+#include <math.h>
 #include "enums.h"
 #include "deck.h"
-#include <gtk/gtk.h>
+#include "playerbox_render.h"
 
 #define MAX_CARDS 56
+
 extern const char* CARDS_RESOURCES[MAX_CARDS]; 
 
-
-typedef cairo_surface_t Icon; 
 typedef struct Poker_Gui Poker_Gui;
 
 typedef struct Color{
@@ -17,6 +18,16 @@ typedef struct Color{
     double g; 
     double b; 
 } Color; 
+
+extern const Color CHIP_COUNT_TEXT_COLOR; 
+extern const Color PLAYER_TEXT_COLOR;               //light yellow color
+extern const Color POT_COLOR;                       //light green color
+extern const Color TABLE_INNER_OUTLINE_COLOR;       //light green color
+extern const Color TABLE_COLOR;                     //saturated green color 
+extern const Color TABLE_RAIL_COLOR;                //wooden color 
+extern const Color PLAYER_BOX_COLOR;                //dark blueish blackish color
+extern const Color PLAYER_BOX_BORDER_COLOR;         //dark blueish grayish color
+extern const Color AVATAR_BOX_BORDER_COLOR; 
 
 typedef struct Seat_Info{
     double xPos; 
@@ -54,12 +65,15 @@ void drawHiddenCards(cairo_t* cr, Icon** images, float xPos, float yPos, float t
 //DEALER DRAW FUNCTIONS
 void drawDealerCards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* dealerCards, int cardsToDeal); //draws the dealer cards at center of poker table
 
-//PLAYER DRAW FUNCTIONS
+//PLAYER DRAW CARDS FUNCTIONS
+void drawCards(cairo_t* cr, Icon** images, int numOfCards, Card* playerCards, double width, double height, double xPos, double yPos); //general function to draw cards
 void drawPlayer1Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards); //draws player 1's cards at designated position (internal seat var)
 void drawPlayer2Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards); //draws player 2's cards at designated position (internal seat var)
 void drawPlayer3Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards); //draws player 3's cards at designated position (internal seat var)
 void drawPlayer4Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards); //draws player 4's cards at designated position (internal seat var)
 void drawPlayer5Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards); //draws player 5's cards at designated position (internal seat var)
+double getCardGap(GtkWidget *pokerTable);
+void drawBorder(cairo_t* cr, Color borderColor, double borderWidth, double width, double height, double xPos, double yPos);
 
 //PLAYER DRAW HELPER FUNCTIONS 
 void drawPlayerCards(cairo_t* cr, GtkWidget* pokerTable, Icon** images, Card* playerCards, Seat_Info* playerSeat); //draws a player's cards at a designated position (seat)
@@ -67,5 +81,8 @@ void drawPlayerCards(cairo_t* cr, GtkWidget* pokerTable, Icon** images, Card* pl
 //PATH HELPER FUNCTIONS
 void drawRoundedBoxPath(cairo_t* cr, double xPos, double yPos, double boxWidth, double boxHeight); //draws the rounded rect path for player info box
 void roundedTablePath(cairo_t *cr, double x, double y, double w, double h); //draws the rounded pill shape path for table 
+
+//POSITION HELPER FUNCTIONS
+double getCenter(double top, double bot); 
 
 #endif

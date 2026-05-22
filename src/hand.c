@@ -11,6 +11,8 @@ void clear_hand(Hand *hand)
     hand->count = 0;
 }
 
+//deal all cards first --> return as array (card*)
+
 Card deal_hand(Hand *hand, Card card)
 {
     if (hand->count >= HAND_SIZE) {
