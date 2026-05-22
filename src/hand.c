@@ -1,6 +1,12 @@
 #include <stdio.h>
 #include "hand.h"
 
+
+#define BEST_HAND_SIZE 5
+#define TOTAL_HAND_CARDS 7
+#define HAND_SIZE 2
+#define BOARD_SIZE 5
+
 void init_hand(Hand *hand) //initialize hand
 {
     hand->count = 0;
