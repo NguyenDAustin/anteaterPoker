@@ -82,6 +82,56 @@ void print_board(Card board[BOARD_SIZE]) //display for test
 
 
 
+//hand getter
+Card get_hand_card(Hand *hand, int index)
+{
+    //error check
+    if (index < 0 || index >= hand->count) {
+        printf("Error: invalid hand index.\n");
+        return hand->cards[0]; // fallback
+    }
+
+    return hand->cards[index];
+}
+
+//hand setter
+void set_hand_card(Hand *hand, int index, Card card)
+{
+    //error check
+    if (index < 0 || index >= HAND_SIZE) {
+        printf("Error: invalid hand index.\n");
+        return;
+    }
+
+    hand->cards[index] = card;
+
+    if (index >= hand->count) {
+        hand->count = index + 1;
+    }
+}
+
+Card get_board_card(Card board[BOARD_SIZE], int index)
+{
+    //error check
+    if (index < 0 || index >= BOARD_SIZE) {
+        printf("Error: invalid board index.\n");
+        return board[0];
+    }
+
+    return board[index];
+}
+
+void set_board_card(Card board[BOARD_SIZE], int index, Card card)
+{
+    //error check
+    if (index < 0 || index >= BOARD_SIZE) {
+        printf("Error: invalid board index.\n");
+        return;
+    }
+
+    board[index] = card;
+}
+
 void combine_cards(Card combined[], Hand *hand, Card board[], int board_count) //for eval
 {
     int index = 0;
