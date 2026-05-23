@@ -31,6 +31,8 @@ const int BUTTON_HEIGHT = 25;
 const int BUTTON_WIDTH = 50; 
 const int SLIDER_HEIGHT = 300; 
 const int SLIDER_WIDTH = 25; 
+const int CONTROL_AREA_HEIGHT = 75;
+const double DEFAULT_SCREEN_PERCENTAGE = 0.90;
 
 
 //GETTERS + SETTERS 
@@ -321,10 +323,45 @@ void setStyle(GtkWidget* widget, const char* CSS){
     gtk_style_context_add_class(context, CSS); 
 }
 
+void getDefaultWindowSize(int* width, int* height){
+    *width = WINDOW_WIDTH;
+    *height = WINDOW_HEIGHT;
+
+    GdkDisplay* display = gdk_display_get_default();
+    if(!display){
+        return;
+    }
+
+    GdkMonitor* monitor = gdk_display_get_primary_monitor(display);
+    if(!monitor){
+        return;
+    }
+
+    GdkRectangle workarea;
+    gdk_monitor_get_workarea(monitor, &workarea);
+
+    int screenWidth = (int)(workarea.width * DEFAULT_SCREEN_PERCENTAGE);
+    int screenHeight = (int)(workarea.height * DEFAULT_SCREEN_PERCENTAGE);
+
+    if(screenWidth > 0 && screenWidth < *width){
+        *width = screenWidth;
+    }
+
+    if(screenHeight > 0 && screenHeight < *height){
+        *height = screenHeight;
+    }
+}
+
 GtkWidget* createWindow(GtkApplication* app){
     GtkWidget* window = gtk_application_window_new(app); 
+    int windowWidth;
+    int windowHeight;
+
+    getDefaultWindowSize(&windowWidth, &windowHeight);
+
     gtk_window_set_title(GTK_WINDOW(window), TITLE);
-    gtk_window_set_default_size(GTK_WINDOW(window), WINDOW_HEIGHT, WINDOW_WIDTH);
+    gtk_window_set_default_size(GTK_WINDOW(window), windowWidth, windowHeight);
+    gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
     setStyle(window, POKER_TABLE_CSS); 
     return window; 
 }
@@ -342,8 +379,12 @@ GtkWidget* createSecondaryContainer(){//holds pokertable + slider
 
 GtkWidget* createPokerTable(Poker_Gui* pokerGui){ 
     GtkWidget* pokerTable = gtk_drawing_area_new(); 
+    int windowWidth;
+    int windowHeight;
+
+    getDefaultWindowSize(&windowWidth, &windowHeight);
     
-    gtk_widget_set_size_request(pokerTable, WINDOW_WIDTH, WINDOW_HEIGHT); 
+    gtk_widget_set_size_request(pokerTable, windowWidth, windowHeight - CONTROL_AREA_HEIGHT); 
     g_signal_connect(pokerTable, "draw", G_CALLBACK(drawPokerTable), pokerGui);
 
     gtk_widget_set_hexpand(pokerTable, TRUE);
@@ -462,7 +503,7 @@ void create_poker_gui(GtkApplication *app, gpointer user_data){
     GtkWidget* buttonBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10); 
     gtk_box_pack_start(GTK_BOX(mainBox), buttonBox, FALSE, FALSE, 0); 
     gtk_widget_set_halign(buttonBox, GTK_ALIGN_CENTER); 
-    gtk_widget_set_margin_bottom(buttonBox, WINDOW_HEIGHT * 0.05); 
+    gtk_widget_set_margin_bottom(buttonBox, 10); 
 
     
     //creating fold button 
