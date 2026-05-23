@@ -39,7 +39,15 @@ bool portNoProvided(int args){ // checks if the number of command line arguments
 }
 
 
-void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers){ 
+int assignPlayerNumber(int joinedPlayers){
+    // returns the player number for the next person who joins.
+    // first joiner gets 1, second gets 2, etc. pass in the current
+    // count of joined players (before this new person is added).
+    return joinedPlayers + 1;
+}
+
+
+void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers){
     struct sockaddr_in cli_addr; 
     socklen_t clilen; //size of client's address structure 
     int newClientSocket; 
@@ -133,8 +141,10 @@ int main(int argc, char *argv[])
 
     printf("WE ARE RUNNING THE NEW VERSION\n"); 
 
-    int clientSockets[MAX_PLAYERS]; //whoever joins first is player 1, whoever joins first is player 2 
-                                    //this socket --> is PLAYER 1 or PLAYER 2  --> communicate to me 
+    int clientSockets[MAX_PLAYERS]; // clientSockets[i] = socket fd of player (i + 1).
+                                    // first joiner is player 1 at index 0, second is
+                                    // player 2 at index 1, etc. use the index as the
+                                    // player ID to look up or assign per-player data.
 
                                     
     int serverSocket, portno;

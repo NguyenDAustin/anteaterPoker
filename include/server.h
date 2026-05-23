@@ -2,9 +2,16 @@
 #define SERVER_H 
 
 
-void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers); 
-//accepts  clients in connection queue and initializes clientSockets array with each accepted client's unique socket   
+void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers);
+//accepts  clients in connection queue and initializes clientSockets array with each accepted client's unique socket
 //returns the number of players that successfully joined
+
+int assignPlayerNumber(int joinedPlayers);
+//returns the player number for the next person who joins.
+//first joiner returns 1, second returns 2, etc.
+//pass the current joined-player count (BEFORE the new person is added).
+//note: store the result in a separate playerNumbers[] array,
+//      NOT in clientSockets[] (which must hold socket fds for select()).
 
 
 
