@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 
     app = gtk_application_new("com.anteater.poker", G_APPLICATION_FLAGS_NONE);
 
-    g_signal_connect(app, "activate", G_CALLBACK(create_poker_gui), sockfd); //passing in socket
+    g_signal_connect(app, "activate", G_CALLBACK(create_poker_gui), GINT_TO_POINTER(sockfd)); //passing in socket
 
     status = g_application_run(G_APPLICATION(app), 0, NULL);
 

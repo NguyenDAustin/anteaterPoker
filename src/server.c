@@ -9,6 +9,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include "communication.h"
+#include "poker_protocol.h"
 #include "server.h"
 
 
@@ -55,20 +57,32 @@ void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers){
 
 void readMessage(int clientSocket){ 
     char buffer[256]; 
-    int n; 
+    ssize_t n;
+    PokerActionMessage action;
+
     bzero(buffer, 256); 
 
     printf("message being read\n"); 
 
-    n = read(clientSocket, buffer, 255);  
+    n = receiveMessage(clientSocket, buffer, sizeof(buffer));
 
-    if (n < 0) 
+    if (n < 0)
         error("ERROR reading from socket");
 
-    printf("Here is the message: %s\n",buffer);
-    n = write(clientSocket, "I got your message", 18);  
+    if (n == 0) {
+        printf("client disconnected\n");
+        return;
+    }
 
-    if (n < 0) 
+    if (parsePokerActionMessage(buffer, &action)) {
+        printf("Player action: %s amount=%d\n", pokerActionTypeToString(action.type), action.amount);
+    } else {
+        printf("Unknown client message: %s\n", buffer);
+    }
+
+    n = sendMessage(clientSocket, "I got your poker action\n");
+
+    if (n < 0)
         error("ERROR writing to socket");
 
 }

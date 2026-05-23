@@ -1,5 +1,7 @@
 
 #include "gui.h"
+#include "communication.h"
+#include "poker_protocol.h"
 
 const char* TITLE = "ANTEATER POKER"; 
 
@@ -408,12 +410,15 @@ void allocatePlayerInfos(Player_Info** playerInfo){
 
 void onFoldClicked(GtkWidget* button, gpointer user_data){ 
     Poker_Gui* pokerGui = user_data; 
-    int socket = getSocket(pokerGui); 
-    char message[100] = "FOLD!"; 
+    int socket = getSocket(pokerGui);
+    char message[POKER_MESSAGE_SIZE];
 
-    int bytesWritten = write(socket,message,strlen(message));   
+    if (!formatPokerActionMessage(message, sizeof(message), POKER_ACTION_FOLD, 0)) {
+        printf("ERROR: was not able to format fold message\n");
+        return;
+    }
 
-    if(bytesWritten < 0) 
+    if(sendMessage(socket, message) < 0)
         printf("ERROR: was not able to send fold message\n"); 
 }
 
@@ -421,11 +426,20 @@ void onFoldClicked(GtkWidget* button, gpointer user_data){
 void onRaiseClicked(GtkWidget* button, gpointer user_data){ 
     Poker_Gui* pokerGui = user_data; 
     int socket = getSocket(pokerGui); 
-    char message[100] = "RAISE!"; 
+    GtkWidget* raiseSlider = getRaiseSlider(pokerGui);
+    int raiseAmount = 0;
+    char message[POKER_MESSAGE_SIZE];
 
-    int bytesWritten = write(socket,message,strlen(message));   
+    if (raiseSlider) {
+        raiseAmount = (int)gtk_range_get_value(GTK_RANGE(raiseSlider));
+    }
 
-    if(bytesWritten < 0) 
+    if (!formatPokerActionMessage(message, sizeof(message), POKER_ACTION_RAISE, raiseAmount)) {
+        printf("ERROR: was not able to format raise message\n");
+        return;
+    }
+
+    if(sendMessage(socket, message) < 0)
         printf("ERROR: was not able to send raise message\n"); 
 }
 
@@ -433,11 +447,14 @@ void onRaiseClicked(GtkWidget* button, gpointer user_data){
 void onCallClicked(GtkWidget* button, gpointer user_data){ 
     Poker_Gui* pokerGui = user_data; 
     int socket = getSocket(pokerGui); 
-    char message[100] = "CALL!"; 
+    char message[POKER_MESSAGE_SIZE];
 
-    int bytesWritten = write(socket,message,strlen(message));   
+    if (!formatPokerActionMessage(message, sizeof(message), POKER_ACTION_CALL, 0)) {
+        printf("ERROR: was not able to format call message\n");
+        return;
+    }
 
-    if(bytesWritten < 0) 
+    if(sendMessage(socket, message) < 0)
         printf("ERROR: was not able to send call message\n"); 
 }
 
@@ -446,7 +463,7 @@ void create_poker_gui(GtkApplication *app, gpointer user_data){
     Poker_Gui* pokerGui = g_malloc(sizeof(Poker_Gui));
     setWindow(pokerGui, createWindow(app));
 
-    int socket = user_data;  
+    int socket = GPOINTER_TO_INT(user_data);
     setSocket(pokerGui, socket); 
     
     
