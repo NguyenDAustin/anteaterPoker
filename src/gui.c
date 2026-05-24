@@ -4,6 +4,13 @@
 const char* TITLE = "ANTEATER POKER"; 
 
 const char *CSS =
+    ".waitroom-bg {"  
+    "   background-image: url('resources/wating_room.png');"
+    "   background-size: cover;" 
+    "   background-repeat: no-repeat;" 
+    "   background-position: center;"
+    "}"
+    
     ".poker-bg {"
     "   background-image: url('resources/poker_table.png');"
     "   background-size: cover;"
@@ -14,13 +21,23 @@ const char *CSS =
     ".button-bg { "
     "   background-color: rgb(205, 193, 176); "
     "   color: rgb(22, 47, 31); "
+    "   font-family: 'VT323';"
     "   font-weight: bold; "
     "   font-size: 18px; "
+    "}"
+    
+    ".slider-bg{" 
+    "   background-color: rgba(19, 21, 28, 0.6);" 
+    "   font-family: 'VT323';" 
+    "   color: rgb(205,193,176);"
+    "   font-weight: bold;"
+    "   font-size: 17px;"
     "}"; 
 
-
+const char* WAITING_ROOM_CSS = "waitroom-bg"; 
 const char* POKER_TABLE_CSS = "poker-bg"; 
 const char* BUTTON_CSS = "button-bg"; 
+const char* SLIDER_CSS = "slider-bg"; 
 
 const char* AVATAR_IMG_RESOURCE = "resources/avatars/avatar1_img.png"; 
 const char* CHIP_ICON_RESOURCE = "resources/red_chip.png"; 
@@ -29,8 +46,8 @@ const char* PIXEL_FONT_RESOURCE2 = "resources/fonts/pixel_font2.ttf";
 
 const int BUTTON_HEIGHT = 25; 
 const int BUTTON_WIDTH = 50; 
-const int SLIDER_HEIGHT = 300; 
-const int SLIDER_WIDTH = 25; 
+const int SLIDER_HEIGHT = 25; 
+const int SLIDER_WIDTH = 300; 
 
 
 //GETTERS + SETTERS 
@@ -340,6 +357,7 @@ GtkWidget* createSecondaryContainer(){//holds pokertable + slider
     return secondBox; 
 }
 
+
 GtkWidget* createPokerTable(Poker_Gui* pokerGui){ 
     GtkWidget* pokerTable = gtk_drawing_area_new(); 
     
@@ -380,7 +398,11 @@ void onFoldClicked(GtkWidget* button, gpointer user_data){
 void onRaiseClicked(GtkWidget* button, gpointer user_data){ 
     Poker_Gui* pokerGui = user_data; 
     int socket = getSocket(pokerGui); 
-    char message[100] = "RAISE!"; 
+    double raiseValue = gtk_range_get_value(GTK_RANGE(getRaiseSlider(pokerGui))); 
+
+    char message[100]; 
+
+    snprintf(message, sizeof(message), "RAISE - %d", abs(raiseValue));
 
     int bytesWritten = write(socket,message,strlen(message));   
 
@@ -400,6 +422,35 @@ void onCallClicked(GtkWidget* button, gpointer user_data){
         printf("ERROR: was not able to send call message\n"); 
 }
 
+void createWaitingRoom(GtkApplication* app, gpointer user_data){ 
+    printf("Creating Waitroom\n"); 
+    int socket = user_data; 
+
+    //creating wait room window
+    GtkWidget* window = gtk_application_window_new(app); 
+    gtk_window_set_title(GTK_WINDOW(window), TITLE);
+    gtk_window_set_default_size(GTK_WINDOW(window), WINDOW_HEIGHT, WINDOW_WIDTH);
+    loadCss(window, CSS); 
+    setStyle(window, WAITING_ROOM_CSS);
+    
+    //creating box 
+    GtkWidget* mainBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0); 
+    gtk_container_add(GTK_CONTAINER(window), mainBox);
+
+    //creating start button 
+    GtkWidget* startButton = gtk_button_new_with_label("START"); 
+    gtk_widget_set_size_request(startButton, BUTTON_WIDTH, BUTTON_HEIGHT);  
+    gtk_widget_set_halign(startButton, GTK_ALIGN_CENTER); 
+    gtk_box_pack_start(GTK_BOX(mainBox), startButton);
+    setStyle(startButton, BUTTON_CSS); 
+
+    //icons for when a person joins
+
+    gtk_widget_show_all(window);  
+    //setWindow(pokerGui, createWindow(app));
+
+}
+
 void create_poker_gui(GtkApplication *app, gpointer user_data){
     printf("Creating poker gui\n"); 
     Poker_Gui* pokerGui = g_malloc(sizeof(Poker_Gui));
@@ -416,7 +467,9 @@ void create_poker_gui(GtkApplication *app, gpointer user_data){
 
     //allocating player info 
     pokerGui->playerInfo = g_malloc(sizeof(Player_Info*) * MAX_PLAYERS);
-    allocatePlayerInfos(pokerGui->playerInfo); 
+    allocatePlayerInfos(pokerGui->playerInfo);  
+
+    //default initializing playerInfos --> for active player -->
 
     //creating card images
     pokerGui->images = g_malloc(sizeof(Icon*) * (MAX_CARDS + 1)); //because we want to include back of card
@@ -443,27 +496,15 @@ void create_poker_gui(GtkApplication *app, gpointer user_data){
     GtkWidget *mainBox = createMainContainer(); 
     gtk_container_add(GTK_CONTAINER(pokerGui->Window), mainBox);
 
-    //creating secondary container for pokertable and slider 
-    GtkWidget* secondBox = createSecondaryContainer(); 
-    gtk_box_pack_start(GTK_BOX(mainBox), secondBox, TRUE, TRUE, 0); 
-
     //creating poker table
     pokerGui->pokerTable = createPokerTable(pokerGui); 
-    //gtk_box_pack_start(GTK_BOX(mainBox), pokerGui->pokerTable, TRUE, TRUE, 0); //change
-    gtk_box_pack_start(GTK_BOX(secondBox), getPokerTable(pokerGui), TRUE, TRUE, 0); 
+    gtk_box_pack_start(GTK_BOX(mainBox), getPokerTable(pokerGui), TRUE, TRUE, 0); 
 
-    //creating slider 
-    GtkWidget* raiseSlider = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0, 1000, 10); //min val, max val, step size
-    gtk_box_pack_start(GTK_BOX(secondBox), raiseSlider, FALSE, FALSE, 5);
-    gtk_widget_set_size_request(raiseSlider, SLIDER_WIDTH, SLIDER_HEIGHT); 
-    setRaiseSlider(pokerGui, raiseSlider);
-    
     //creating button container 
     GtkWidget* buttonBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10); 
     gtk_box_pack_start(GTK_BOX(mainBox), buttonBox, FALSE, FALSE, 0); 
     gtk_widget_set_halign(buttonBox, GTK_ALIGN_CENTER); 
     gtk_widget_set_margin_bottom(buttonBox, WINDOW_HEIGHT * 0.05); 
-
     
     //creating fold button 
     GtkWidget* foldButton = gtk_button_new_with_label("FOLD");
@@ -485,6 +526,14 @@ void create_poker_gui(GtkApplication *app, gpointer user_data){
     gtk_widget_set_size_request(callButton, BUTTON_WIDTH, BUTTON_HEIGHT); 
     setStyle(callButton, BUTTON_CSS);
     g_signal_connect(callButton, "clicked", G_CALLBACK(onCallClicked), pokerGui);
+
+    //creating horizontal slider  
+    GtkWidget* raiseSlider = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 1000, 50); //min val, max val, step size
+    gtk_widget_set_size_request(raiseSlider, SLIDER_WIDTH, SLIDER_HEIGHT); 
+    gtk_box_pack_start(GTK_BOX(buttonBox), raiseSlider, FALSE, FALSE, 0); 
+    setStyle(raiseSlider, SLIDER_CSS); 
+    setRaiseSlider(pokerGui, raiseSlider);
+
     
     printf("finished creating poker gui\n"); 
     gtk_widget_show_all(pokerGui->Window);  

@@ -554,7 +554,8 @@ void drawBorder(cairo_t* cr, Color borderColor, double borderWidth, double width
 
 void drawTurnHighlight(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, double xPos, double yPos){
     double width = 2.0; 
-    drawBorder(cr, PLAYER_TEXT_COLOR, width, getPlayerBoxWidth(getPokerTable(pokerGui)), getPlayerBoxHeight(getPokerTable(pokerGui)), xPos, yPos); 
+    double spacing = 3.0; 
+    drawBorder(cr, PLAYER_TEXT_COLOR, width, getPlayerBoxWidth(getPokerTable(pokerGui)) + spacing, getPlayerBoxHeight(getPokerTable(pokerGui)) + spacing, xPos, yPos); 
 }
 
 
