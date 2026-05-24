@@ -1,5 +1,7 @@
 
 #include "gui.h"
+#include "communication.h"
+#include "poker_protocol.h"
 
 const char* TITLE = "ANTEATER POKER"; 
 
@@ -48,6 +50,8 @@ const int BUTTON_HEIGHT = 25;
 const int BUTTON_WIDTH = 50; 
 const int SLIDER_HEIGHT = 25; 
 const int SLIDER_WIDTH = 300; 
+const int CONTROL_AREA_HEIGHT = 75;
+const double DEFAULT_SCREEN_PERCENTAGE = 0.90;
 
 
 //GETTERS + SETTERS 
@@ -338,10 +342,45 @@ void setStyle(GtkWidget* widget, const char* CSS){
     gtk_style_context_add_class(context, CSS); 
 }
 
+void getDefaultWindowSize(int* width, int* height){
+    *width = WINDOW_WIDTH;
+    *height = WINDOW_HEIGHT;
+
+    GdkDisplay* display = gdk_display_get_default();
+    if(!display){
+        return;
+    }
+
+    GdkMonitor* monitor = gdk_display_get_primary_monitor(display);
+    if(!monitor){
+        return;
+    }
+
+    GdkRectangle workarea;
+    gdk_monitor_get_workarea(monitor, &workarea);
+
+    int screenWidth = (int)(workarea.width * DEFAULT_SCREEN_PERCENTAGE);
+    int screenHeight = (int)(workarea.height * DEFAULT_SCREEN_PERCENTAGE);
+
+    if(screenWidth > 0 && screenWidth < *width){
+        *width = screenWidth;
+    }
+
+    if(screenHeight > 0 && screenHeight < *height){
+        *height = screenHeight;
+    }
+}
+
 GtkWidget* createWindow(GtkApplication* app){
     GtkWidget* window = gtk_application_window_new(app); 
+    int windowWidth;
+    int windowHeight;
+
+    getDefaultWindowSize(&windowWidth, &windowHeight);
+
     gtk_window_set_title(GTK_WINDOW(window), TITLE);
-    gtk_window_set_default_size(GTK_WINDOW(window), WINDOW_HEIGHT, WINDOW_WIDTH);
+    gtk_window_set_default_size(GTK_WINDOW(window), windowWidth, windowHeight);
+    gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
     setStyle(window, POKER_TABLE_CSS); 
     return window; 
 }
@@ -360,8 +399,12 @@ GtkWidget* createSecondaryContainer(){//holds pokertable + slider
 
 GtkWidget* createPokerTable(Poker_Gui* pokerGui){ 
     GtkWidget* pokerTable = gtk_drawing_area_new(); 
+    int windowWidth;
+    int windowHeight;
+
+    getDefaultWindowSize(&windowWidth, &windowHeight);
     
-    gtk_widget_set_size_request(pokerTable, WINDOW_WIDTH, WINDOW_HEIGHT); 
+    gtk_widget_set_size_request(pokerTable, windowWidth, windowHeight - CONTROL_AREA_HEIGHT); 
     g_signal_connect(pokerTable, "draw", G_CALLBACK(drawPokerTable), pokerGui);
 
     gtk_widget_set_hexpand(pokerTable, TRUE);
@@ -385,12 +428,15 @@ void allocatePlayerInfos(Player_Info** playerInfo){
 
 void onFoldClicked(GtkWidget* button, gpointer user_data){ 
     Poker_Gui* pokerGui = user_data; 
-    int socket = getSocket(pokerGui); 
-    char message[100] = "FOLD!"; 
+    int socket = getSocket(pokerGui);
+    char message[POKER_MESSAGE_SIZE];
 
-    int bytesWritten = write(socket,message,strlen(message));   
+    if (!formatPokerActionMessage(message, sizeof(message), POKER_ACTION_FOLD, 0)) {
+        printf("ERROR: was not able to format fold message\n");
+        return;
+    }
 
-    if(bytesWritten < 0) 
+    if(sendMessage(socket, message) < 0)
         printf("ERROR: was not able to send fold message\n"); 
 }
 
@@ -398,15 +444,21 @@ void onFoldClicked(GtkWidget* button, gpointer user_data){
 void onRaiseClicked(GtkWidget* button, gpointer user_data){ 
     Poker_Gui* pokerGui = user_data; 
     int socket = getSocket(pokerGui); 
-    double raiseValue = gtk_range_get_value(GTK_RANGE(getRaiseSlider(pokerGui))); 
+    GtkWidget* raiseSlider = getRaiseSlider(pokerGui);
+    
+    int raiseAmount = 0;
+    char message[POKER_MESSAGE_SIZE];
 
-    char message[100]; 
+    if (raiseSlider) {
+        raiseAmount = (int)gtk_range_get_value(GTK_RANGE(raiseSlider));
+    }
 
-    snprintf(message, sizeof(message), "RAISE - %d", abs(raiseValue));
+    if (!formatPokerActionMessage(message, sizeof(message), POKER_ACTION_RAISE, raiseAmount)) {
+        printf("ERROR: was not able to format raise message\n");
+        return;
+    }
 
-    int bytesWritten = write(socket,message,strlen(message));   
-
-    if(bytesWritten < 0) 
+    if(sendMessage(socket, message) < 0)
         printf("ERROR: was not able to send raise message\n"); 
 }
 
@@ -414,11 +466,14 @@ void onRaiseClicked(GtkWidget* button, gpointer user_data){
 void onCallClicked(GtkWidget* button, gpointer user_data){ 
     Poker_Gui* pokerGui = user_data; 
     int socket = getSocket(pokerGui); 
-    char message[100] = "CALL!"; 
+    char message[POKER_MESSAGE_SIZE];
 
-    int bytesWritten = write(socket,message,strlen(message));   
+    if (!formatPokerActionMessage(message, sizeof(message), POKER_ACTION_CALL, 0)) {
+        printf("ERROR: was not able to format call message\n");
+        return;
+    }
 
-    if(bytesWritten < 0) 
+    if(sendMessage(socket, message) < 0)
         printf("ERROR: was not able to send call message\n"); 
 }
 
@@ -441,7 +496,7 @@ void createWaitingRoom(GtkApplication* app, gpointer user_data){
     GtkWidget* startButton = gtk_button_new_with_label("START"); 
     gtk_widget_set_size_request(startButton, BUTTON_WIDTH, BUTTON_HEIGHT);  
     gtk_widget_set_halign(startButton, GTK_ALIGN_CENTER); 
-    gtk_box_pack_start(GTK_BOX(mainBox), startButton);
+    gtk_box_pack_start(GTK_BOX(mainBox), startButton, FALSE, FALSE, 0);
     setStyle(startButton, BUTTON_CSS); 
 
     //icons for when a person joins
@@ -456,7 +511,7 @@ void create_poker_gui(GtkApplication *app, gpointer user_data){
     Poker_Gui* pokerGui = g_malloc(sizeof(Poker_Gui));
     setWindow(pokerGui, createWindow(app));
 
-    int socket = user_data;  
+    int socket = GPOINTER_TO_INT(user_data);
     setSocket(pokerGui, socket); 
     
     
@@ -504,7 +559,8 @@ void create_poker_gui(GtkApplication *app, gpointer user_data){
     GtkWidget* buttonBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10); 
     gtk_box_pack_start(GTK_BOX(mainBox), buttonBox, FALSE, FALSE, 0); 
     gtk_widget_set_halign(buttonBox, GTK_ALIGN_CENTER); 
-    gtk_widget_set_margin_bottom(buttonBox, WINDOW_HEIGHT * 0.05); 
+    gtk_widget_set_margin_bottom(buttonBox, 25); 
+
     
     //creating fold button 
     GtkWidget* foldButton = gtk_button_new_with_label("FOLD");

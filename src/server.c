@@ -9,6 +9,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include "communication.h"
+#include "poker_protocol.h"
 #include "server.h"
 
 
@@ -37,7 +39,15 @@ bool portNoProvided(int args){ // checks if the number of command line arguments
 }
 
 
-void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers){ 
+int assignPlayerNumber(int joinedPlayers){
+    // returns the player number for the next person who joins.
+    // first joiner gets 1, second gets 2, etc. pass in the current
+    // count of joined players (before this new person is added).
+    return joinedPlayers + 1;
+}
+
+
+void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers){
     struct sockaddr_in cli_addr; 
     socklen_t clilen; //size of client's address structure 
     int newClientSocket; 
@@ -55,20 +65,32 @@ void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers){
 
 void readMessage(int clientSocket){ 
     char buffer[256]; 
-    int n; 
+    ssize_t n;
+    PokerActionMessage action;
+
     bzero(buffer, 256); 
 
     printf("message being read\n"); 
 
-    n = read(clientSocket, buffer, 255);  
+    n = receiveMessage(clientSocket, buffer, sizeof(buffer));
 
-    if (n < 0) 
+    if (n < 0)
         error("ERROR reading from socket");
 
-    printf("Here is the message: %s\n",buffer);
-    n = write(clientSocket, "I got your message", 18);  
+    if (n == 0) {
+        printf("client disconnected\n");
+        return;
+    }
 
-    if (n < 0) 
+    if (parsePokerActionMessage(buffer, &action)) {
+        printf("Player action: %s amount=%d\n", pokerActionTypeToString(action.type), action.amount);
+    } else {
+        printf("Unknown client message: %s\n", buffer);
+    }
+
+    n = sendMessage(clientSocket, "I got your poker action\n");
+
+    if (n < 0)
         error("ERROR writing to socket");
 
 }
@@ -119,8 +141,10 @@ int main(int argc, char *argv[])
 
     printf("WE ARE RUNNING THE NEW VERSION\n"); 
 
-    int clientSockets[MAX_PLAYERS]; //whoever joins first is player 1, whoever joins first is player 2 
-                                    //this socket --> is PLAYER 1 or PLAYER 2  --> communicate to me 
+    int clientSockets[MAX_PLAYERS]; // clientSockets[i] = socket fd of player (i + 1).
+                                    // first joiner is player 1 at index 0, second is
+                                    // player 2 at index 1, etc. use the index as the
+                                    // player ID to look up or assign per-player data.
 
                                     
     int serverSocket, portno;
