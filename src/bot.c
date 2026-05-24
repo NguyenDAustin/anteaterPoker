@@ -1,4 +1,5 @@
 #include "bot.h"
+#include <stdlib.h>
 
 void initBot(Bot *bot, const char *name, int seat, int chips, BotDifficulty difficulty)
 {
@@ -6,7 +7,8 @@ void initBot(Bot *bot, const char *name, int seat, int chips, BotDifficulty diff
     bot->difficulty = difficulty;
 }
 
-int getChenValue(Card card) {
+int getChenValue(Card card)
+{
     Rank rank = card.rank;
 
     if (rank >= TWO && rank <= TEN)
@@ -25,12 +27,13 @@ int getChenValue(Card card) {
         return 10;
 
     if (rank == ANTEATER)
-        return 12;          //change later
+        return 12; // change later
 
     return 0;
 }
 
-int evalPreFlop(Card hand[2]) {
+int evalPreFlop(Card hand[2])
+{
     int score = 0;
 
     Rank r1 = hand[0].rank;
@@ -38,27 +41,31 @@ int evalPreFlop(Card hand[2]) {
 
     int hasAnteater = r1 == ANTEATER || r2 == ANTEATER;
 
-    //highest value
+    // highest value
     score += (getChenValue(hand[0]) > getChenValue(hand[1])) ? getChenValue(hand[0]) : getChenValue(hand[1]);
 
-    //pocket pair
-    if(r1 == r2) {
+    // pocket pair
+    if (r1 == r2)
+    {
         score *= 2;
 
-        if(score < 5)
+        if (score < 5)
             score = 5;
     }
 
-    //suited
-    if(hand[0].suit == hand[1].suit) {
+    // suited
+    if (hand[0].suit == hand[1].suit)
+    {
         score += 2;
     }
 
-    //gap
-    if(hasAnteater) {
+    // gap
+    if (hasAnteater)
+    {
         score += 3;
     }
-    else {
+    else
+    {
         int gap = abs(r1 - r2) - 1;
 
         if (gap == 1)
@@ -75,13 +82,28 @@ int evalPreFlop(Card hand[2]) {
     }
 
     return score;
-
 }
+
+PlayerAction getBotPreFlopAction(Player *bot)
+{
+    int score = evalPreFlop(bot->hand);
+
+    if (score <= 3)
+        return (PlayerAction){FOLD, 0};
+    else
+        return (PlayerAction){CHECK, 0};
+}
+
+PlayerAction getBotPostFlopAction(Player *bot)
+{
+    return (PlayerAction){CHECK, 0};
+}
+
 PlayerAction getBotAction(Player *bot)
 {
-    if(score <= 3) 
-        return { FOLD, 0 };
-    else    
-        return { CHECK, 0 };
-    
+    if (/*preflop*/)
+        return getBotPreFlopAction;
+
+    else
+        return getbotPostFlopAction;
 }

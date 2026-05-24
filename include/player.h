@@ -19,7 +19,7 @@ typedef struct
     int betSize;
     PlayerType type;
     bool isActive;
-} Player;
+} Player_Info;
 
 typedef enum
 {
@@ -30,19 +30,26 @@ typedef enum
     RAISE
 } PlayerActionType;
 
-typedef struct {
+typedef struct
+{
     PlayerActionType actionType;
     int amount;
 } PlayerAction;
 
-//start of program
+//GETTER FUNCTIONS FOR PLAYER INFO - NO PLAYER NUM GIVEN 
+char* getName(const Player_Info* playerInfo); 
+int getChipCount(const Player_Info* playerInfo); 
+Icon* getAvatar(const Player_Info* playerInfo); 
+Card* getCards(const Player_Info* playerInfo); 
+
+// start of program
 void initPlayer(Player *player, const char *name, int seat, int chips, PlayerType type);
 
-//start of each hand
+// start of each hand
 void resetPlayer(Player *player);
 void dealHoleCards(Player *player, Card card1, Card card2);
 
-//start of each betting round
+// start of each betting round
 void resetBetSize(Player *player);
 
 void takeAction(Player *player, PlayerAction action, int amount);
