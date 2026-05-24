@@ -26,7 +26,7 @@ bool hasAcceptionError(int newClientSocket);
 //returns true if a client wasn't able to join . function also prints out error message 
 
 
-
+//random comment
 
 
 
