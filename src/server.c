@@ -39,6 +39,37 @@ bool portNoProvided(int args){ // checks if the number of command line arguments
 }
 
 
+int writeToClient(int* clientSockets, int joinedPlayers, int playerNumber, const char* message){
+    if (playerNumber < 1 || playerNumber > joinedPlayers) {
+        printf("ERROR: invalid player number %d (joined players: %d)\n", playerNumber, joinedPlayers);
+        return -1;
+    }
+
+    int socketFd = clientSockets[playerNumber - 1];
+
+    if (sendMessage(socketFd, message) < 0) {
+        printf("ERROR: failed to write to player %d\n", playerNumber);
+        return -1;
+    }
+
+    return 0;
+}
+
+
+int broadcastToAll(int* clientSockets, int joinedPlayers, const char* message){
+    int result = 0;
+
+    for (int i = 0; i < joinedPlayers; i++) {
+        if (sendMessage(clientSockets[i], message) < 0) {
+            printf("ERROR: failed to broadcast to player %d\n", i + 1);
+            result = -1;
+        }
+    }
+
+    return result;
+}
+
+
 int assignPlayerNumber(int joinedPlayers){
     // returns the player number for the next person who joins.
     // first joiner gets 1, second gets 2, etc. pass in the current

@@ -21,13 +21,19 @@ bool portNoProvided(int args);
 // if number of command line arguments is less than 2 --> then port no was not probided 
 //aka ./server not ./server portno
 
-bool hasAcceptionError(int newClientSocket); 
-//given the newly joined client socket. check if the client was able to sucessfully join 
-//returns true if a client wasn't able to join . function also prints out error message 
+bool hasAcceptionError(int newClientSocket);
+//given the newly joined client socket. check if the client was able to sucessfully join
+//returns true if a client wasn't able to join . function also prints out error message
 
 
-//random comment
+//SERVER-TO-CLIENT WRITE FUNCTIONS
+int writeToClient(int* clientSockets, int joinedPlayers, int playerNumber, const char* message);
+//sends message to a specific player identified by playerNumber (1-indexed; first joiner is 1).
+//returns 0 on success, -1 on failure (bad player number or socket write error).
+
+int broadcastToAll(int* clientSockets, int joinedPlayers, const char* message);
+//sends the same message to every connected client.
+//returns 0 if all writes succeeded, -1 if any failed.
 
 
-
-#endif 
+#endif
