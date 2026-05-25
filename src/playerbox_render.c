@@ -86,10 +86,10 @@ void drawPlayerInfoBox(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, Pl
     int avatarBorderWidth = borderWidth * 0.5;  
 
     //loading gui stuff
-    Icon** images = getImages(pokerGui); 
-    const char* playerName = getName(playerInfo);
-    Icon* avatarImg = getAvatar(playerInfo);
-    Card* playerCards = getCards(playerInfo);
+    Icon** images = getImages(pokerGui);
+    const char* playerName = playerInfo->name;
+    Icon* avatarImg = playerInfo->avatarImg;
+    Card* playerCards = playerInfo->playerCards;
 
     //loading heights and width
     double boxHeight = getPlayerBoxHeight(drawArea);
@@ -143,7 +143,7 @@ void drawPlayerInfoBox(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, Pl
     double chipTextXPos = chipXPos; 
     double chipTextFontSize = boxHeight * 0.2; 
     char chipCount[MAX_NUMBER_LENGTH]; //build the text
-    moneyBuilder(chipCount, getChipCount(playerInfo)); 
+    moneyBuilder(chipCount, playerInfo->chips);
     drawText(cr, CHIP_COUNT_TEXT_COLOR, chipCount, chipTextFontSize, chipTextXPos, chipTextYPos); 
 
     //add the cards -

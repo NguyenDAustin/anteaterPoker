@@ -547,6 +547,30 @@ void createWaitingRoom(GtkApplication *app, gpointer user_data)
     // setWindow(pokerGui, createWindow(app));
 }
 
+static gboolean onServerMessage(GIOChannel *channel, GIOCondition condition, gpointer user_data)
+{
+    Poker_Gui *pokerGui = user_data;
+
+    if (condition & (G_IO_HUP | G_IO_ERR))
+    {
+        printf("server disconnected\n");
+        return FALSE;
+    }
+
+    int socket = getSocket(pokerGui);
+    char buffer[256];
+    ssize_t n = receiveMessage(socket, buffer, sizeof(buffer));
+
+    if (n <= 0)
+    {
+        printf("server disconnected\n");
+        return FALSE;
+    }
+
+    printf("server says: %s", buffer);
+    return TRUE;
+}
+
 void create_poker_gui(GtkApplication *app, gpointer user_data)
 {
     printf("Creating poker gui\n");
@@ -555,6 +579,10 @@ void create_poker_gui(GtkApplication *app, gpointer user_data)
 
     int socket = GPOINTER_TO_INT(user_data);
     setSocket(pokerGui, socket);
+
+    GIOChannel *serverChannel = g_io_channel_unix_new(socket);
+    g_io_add_watch(serverChannel, G_IO_IN | G_IO_HUP | G_IO_ERR, onServerMessage, pokerGui);
+    g_io_channel_unref(serverChannel);
 
     loadCss(pokerGui->Window, CSS);
     loadFont(PIXEL_FONT_RESOURCE);
