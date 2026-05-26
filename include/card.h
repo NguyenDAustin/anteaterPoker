@@ -5,7 +5,8 @@
 
 typedef struct {
     Rank rank; 
-    Suit suit; 
+    Suit suit;
+    Cardtype type; 
 } Card; 
 
 #endif 
