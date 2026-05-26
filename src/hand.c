@@ -279,12 +279,7 @@ int straight(Card cards[], int count)
         }
     }
 
-    if (has_ace &&
-        has_two &&
-        has_three &&
-        has_four &&
-        has_five) {
-
+    if (has_ace && has_two && has_three && has_four && has_five) {
         return 1;
     }
 
