@@ -4,6 +4,7 @@
 
 #include "enums.h"
 #include "player.h"
+#include "state.h"
 
 void initPlayer(Player_Info *player, const char *name, int seat, int chips, PlayerType type)
 {
@@ -134,6 +135,16 @@ const Card *getCardsConst(const Player_Info *player)
     return player->playerCards;
 }
 
+bool isPlayerActive(const Player_Info *player)
+{
+    if (!player)
+    {
+        return false;
+    }
+
+    return player->isActive;
+}
+
 void setName(Player_Info *player, const char *name)
 {
     if (!player || !name)
@@ -211,6 +222,17 @@ void setAvatar(Player_Info *player, Icon *avatarImg)
     player->avatarImg = avatarImg;
 }
 
+void foldPlayer(Player_Info *player)
+{
+    if (!player)
+    {
+        printf("ERROR: player is NULL cannot fold player\n");
+        return;
+    }
+
+    player->isActive = false;
+}
+
 void dealHoleCards(Player_Info *player, Card card1, Card card2)
 {
     if (!player)
@@ -278,25 +300,4 @@ void takeAction(Player_Info *player, PlayerAction action)
         printf("ERROR: invalid player action\n");
         break;
     }
-}
-
-void foldPlayer(Player_Info *player)
-{
-    if (!player)
-    {
-        printf("ERROR: player is NULL cannot fold player\n");
-        return;
-    }
-
-    player->isActive = false;
-}
-
-bool isPlayerActive(const Player_Info *player)
-{
-    if (!player)
-    {
-        return false;
-    }
-
-    return player->isActive;
 }
