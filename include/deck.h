@@ -34,6 +34,11 @@ typedef enum {
     ANTEATER_CARD
 } Cardtype;
 
+typedef struct {
+    int rank;
+    Suit suit;
+    Cardtype type;
+} Card;
 
 typedef struct {
     Card cards[DECK_SIZE];
