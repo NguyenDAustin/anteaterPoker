@@ -3,7 +3,6 @@
 #include <time.h>
 
 #include "deck.h"
-#include "card.h"
 
 void init_deck(Deck *deck) //initalize deck
 {
