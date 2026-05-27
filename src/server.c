@@ -10,11 +10,15 @@
 #include <netinet/in.h>
 
 #include "communication.h"
+#include "game.h"
+#include "player.h"
 #include "poker_protocol.h"
 #include "server.h"
+#include "state.h"
 
 
-#define MAX_PLAYERS 3 //the max amount of clients the server will allow to connect
+#define SERVER_MAX_PLAYERS 3 //the max amount of clients the server will allow to connect
+#define STARTING_CHIPS 1000
 
 void error(const char *msg)
 {
@@ -78,7 +82,7 @@ int assignPlayerNumber(int joinedPlayers){
 }
 
 
-void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers){
+void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers, GameState* game){
     struct sockaddr_in cli_addr; 
     socklen_t clilen; //size of client's address structure 
     int newClientSocket; 
@@ -87,17 +91,33 @@ void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers){
     newClientSocket = accept(serverSocket, (struct sockaddr *) &cli_addr, &clilen);
 
     if(!hasAcceptionError(newClientSocket)){ 
-        printf("client has been accepted\n"); 
+        if (*joinedPlayers >= SERVER_MAX_PLAYERS) {
+            sendMessage(newClientSocket, "Lobby is full\n");
+            close(newClientSocket);
+            return;
+        }
+
+        int playerNumber = assignPlayerNumber(*joinedPlayers);
+        char defaultName[sizeof(game->players[0].name)];
+
+        snprintf(defaultName, sizeof(defaultName), "Player%d", playerNumber);
+        initPlayer(&game->players[*joinedPlayers], defaultName, *joinedPlayers, STARTING_CHIPS, HUMAN_PLAYER);
+        game->numPlayers = *joinedPlayers + 1;
+
+        printf("client has been accepted as player %d\n", playerNumber); 
         clientSockets[*joinedPlayers] = newClientSocket; 
         (*joinedPlayers)++; 
     }
 } 
 
 
-void readMessage(int clientSocket){ 
+void readMessage(int* clientSockets, int joinedPlayers, int playerIndex, GameState* game){ 
+    int clientSocket = clientSockets[playerIndex];
     char buffer[256]; 
+    char stateMessage[GAME_STATE_MESSAGE_SIZE];
     ssize_t n;
     PokerActionMessage action;
+    char playerName[20];
 
     bzero(buffer, 256); 
 
@@ -113,13 +133,22 @@ void readMessage(int clientSocket){
         return;
     }
 
-    if (parsePokerActionMessage(buffer, &action)) {
+    if (parsePlayerNameMessage(buffer, playerName, sizeof(playerName))) {
+        strncpy(game->players[playerIndex].name, playerName, sizeof(game->players[playerIndex].name) - 1);
+        game->players[playerIndex].name[sizeof(game->players[playerIndex].name) - 1] = '\0';
+        printf("Player %d name set to %s\n", playerIndex + 1, game->players[playerIndex].name);
+        if (formatFullGameState(stateMessage, sizeof(stateMessage), game)) {
+            n = broadcastToAll(clientSockets, joinedPlayers, stateMessage);
+        } else {
+            n = sendMessage(clientSocket, "Name saved\n");
+        }
+    } else if (parsePokerActionMessage(buffer, &action)) {
         printf("Player action: %s amount=%d\n", pokerActionTypeToString(action.type), action.amount);
+        n = sendMessage(clientSocket, "I got your poker action\n");
     } else {
         printf("Unknown client message: %s\n", buffer);
+        n = sendMessage(clientSocket, "Unknown message\n");
     }
-
-    n = sendMessage(clientSocket, "I got your poker action\n");
 
     if (n < 0)
         error("ERROR writing to socket");
@@ -131,6 +160,9 @@ void lobby(int serverSocket, int* clientSockets){
     int joinedPlayers = 0; 
     int max_fd = serverSocket; 
     int newClientSocket; 
+    GameState game;
+
+    initGameState(&game);
 
     printf("LOBBY CREATED - MULTI CONNECTION VERSION\n");
 
@@ -154,12 +186,12 @@ void lobby(int serverSocket, int* clientSockets){
 
         //accept new clients 
         if(FD_ISSET(serverSocket, &socketList))
-            acceptClient(clientSockets, serverSocket, &joinedPlayers); 
+            acceptClient(clientSockets, serverSocket, &joinedPlayers, &game); 
 
         //reading current messages
         for (int i = 0; i < joinedPlayers; i++) {
             if (FD_ISSET(clientSockets[i], &socketList))
-                readMessage(clientSockets[i]);
+                readMessage(clientSockets, joinedPlayers, i, &game);
         }
     }
 }
@@ -172,7 +204,7 @@ int main(int argc, char *argv[])
 
     printf("WE ARE RUNNING THE NEW VERSION\n"); 
 
-    int clientSockets[MAX_PLAYERS]; // clientSockets[i] = socket fd of player (i + 1).
+    int clientSockets[SERVER_MAX_PLAYERS]; // clientSockets[i] = socket fd of player (i + 1).
                                     // first joiner is player 1 at index 0, second is
                                     // player 2 at index 1, etc. use the index as the
                                     // player ID to look up or assign per-player data.
@@ -200,7 +232,7 @@ int main(int argc, char *argv[])
 
     if (bind(serverSocket, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) error("ERROR on binding");
 
-    listen(serverSocket, MAX_PLAYERS); //we will allow only these many connections in our connection queue
+    listen(serverSocket, SERVER_MAX_PLAYERS); //we will allow only these many connections in our connection queue
 
     lobby(serverSocket, clientSockets); 
 

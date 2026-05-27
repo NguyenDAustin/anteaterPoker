@@ -13,7 +13,7 @@ Card empty_card() {
 }
 
 //check if a player is active and has not folded
-static bool isPlayerActive(const GameState *game, int playerIndex)
+static bool isGamePlayerActive(const GameState *game, int playerIndex)
 {
     if (!game || playerIndex < 0 || playerIndex >= game->numPlayers) {
         return false;
@@ -33,7 +33,7 @@ int nextActivePlayerIndex(const GameState *game)
     int idx = game->currentPlayerIndex;
     for (int i = 1; i <= game->numPlayers; i++) {
         int next = (idx + i) % game->numPlayers;
-        if (isPlayerActive(game, next)) {
+        if (isGamePlayerActive(game, next)) {
             return next;
         }
     }
@@ -63,7 +63,7 @@ void advanceToNextRound(GameState *game)
 
     game->currentBet = 0;
     game->turnNumber = 0;
-    game->currentPlayerIndex = nextActivePlayerIndex(game, game->dealerIndex);
+    game->currentPlayerIndex = nextActivePlayerIndex(game);
     if (game->currentPlayerIndex < 0) {
         game->currentPlayerIndex = 0;
     }
@@ -247,7 +247,7 @@ void resetGameState(GameState *game)
     game->turnNumber = 0;
     init_deck(&game->deck);
     shuffle(&game->deck);
-    game->currentPlayerIndex = nextActivePlayerIndex(game, game->dealerIndex);
+    game->currentPlayerIndex = nextActivePlayerIndex(game);
     if (game->currentPlayerIndex < 0) {
         game->currentPlayerIndex = 0;
     }

@@ -522,8 +522,6 @@ int eval_points(Card player_cards[2], Card board_cards[5])
     Card cards[7];
     int count = 7;
 
-    sort(cards, count);
-
     //add cards from hand to a new hand
     for (int i = 0; i < 2; i++) {
         cards[i] = player_cards[i];
@@ -533,6 +531,8 @@ int eval_points(Card player_cards[2], Card board_cards[5])
     for (int i = 0; i < 5; i++) {
         cards[i + 2] = board_cards[i];
     }
+
+    sort(cards, count);
 
     if (royalFlush(cards, count)) {
         return 9;
@@ -591,4 +591,6 @@ int compare_hands(Card p1_hand[2], Card p2_hand[2], Card board[5])
     else {
         return 0; //split the pot
     }
+
+    return 0;
 }

@@ -26,6 +26,8 @@ typedef struct {
 const char* pokerActionTypeToString(PokerActionType type);
 bool parsePokerActionMessage(const char* message, PokerActionMessage* action);
 bool formatPokerActionMessage(char* buffer, size_t bufferSize, PokerActionType type, int amount);
+bool parsePlayerNameMessage(const char* message, char* nameBuffer, size_t nameBufferSize);
+bool formatPlayerNameMessage(char* buffer, size_t bufferSize, const char* playerName);
 
 // FULL GAME STATE PROTOCOL
 // message format (single line, pipe-separated):
@@ -46,6 +48,7 @@ void applyDealerCards(const char* message, GameState* gameState);
 void applyPlayerChips(const char* message, GameState* gameState, int playerNum);
 void applyPlayerFolded(const char* message, GameState* gameState, int playerNum);
 void applyPlayerCards(const char* message, GameState* gameState, int playerNum);
+void applyPlayerName(const char* message, GameState* gameState, int playerNum);
 
 // convenience parser --> calls every setter for every player.
 void parseFullGameState(const char* message, GameState* gameState);

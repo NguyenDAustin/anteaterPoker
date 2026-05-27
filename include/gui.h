@@ -3,6 +3,7 @@
 
 #include <fontconfig/fontconfig.h>
 #include <gtk/gtk.h>
+#include "player.h"
 #include "render.h"
 #include "enums.h"
 
@@ -11,14 +12,6 @@ extern const char *CSS;
 extern const char *POKER_TABLE;
 extern const int BUTTON_HEIGHT;
 extern const int BUTTON_WIDTH;
-
-typedef struct Player_Info
-{ // not yet --> but I need this later
-    char *name;
-    int chips; // Whoever is in charge of chip count --> you will need to communicate it to me
-    Icon *avatarImg;
-    Card *playerCards; // Austin you need to give me this -> or give naveen this to give me
-} Player_Info;
 
 typedef struct Poker_Gui
 {
@@ -58,7 +51,7 @@ Icon *getChipIcon(const Poker_Gui *pokerGui);
 // GETTER FUNCTIONS FOR PLAYER INFO- GIVEN A PLAYER NUM
 Player_Info **getAllPlayersInfo(const Poker_Gui *pokerGui);
 Player_Info *getPlayerInfo(const Poker_Gui *pokerGui, int playerNum);
-char *getPlayerName(const Player_Info **playerInfo, int playerNum);
+const char *getPlayerName(const Player_Info **playerInfo, int playerNum);
 int getPlayerChipCount(const Player_Info **playerInfo, int playerNum);
 Icon *getPlayerAvatar(const Player_Info **playerInfo, int playerNum);
 Card *getPlayerCards(const Player_Info **playerInfo, int playerNum);

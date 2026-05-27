@@ -1,8 +1,11 @@
 #ifndef SERVER_H 
 #define SERVER_H 
 
+#include <stdbool.h>
 
-void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers);
+#include "state.h"
+
+void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers, GameState* game);
 //accepts  clients in connection queue and initializes clientSockets array with each accepted client's unique socket
 //returns the number of players that successfully joined
 

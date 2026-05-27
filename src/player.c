@@ -25,12 +25,17 @@ void initPlayer(Player_Info *player, const char *name, int seat, int chips, Play
     player->seat = seat;
     player->chips = chips;
     player->betSize = 0;
+    player->currentBet = 0;
     player->type = type;
     player->isActive = true;
+    player->hasFolded = false;
     player->avatarImg = NULL;
 
-    player->playerCards[0] = (Card){0, 0};
-    player->playerCards[1] = (Card){0, 0};
+    player->playerCards = player->hand;
+    player->hand[0] = empty_card();
+    player->hand[1] = empty_card();
+    player->hole_cards[0] = empty_card();
+    player->hole_cards[1] = empty_card();
 }
 
 void resetPlayer(Player_Info *player)
@@ -41,10 +46,15 @@ void resetPlayer(Player_Info *player)
         return;
     }
 
-    player->playerCards[0] = (Card){0, 0};
-    player->playerCards[1] = (Card){0, 0};
+    player->playerCards = player->hand;
+    player->hand[0] = empty_card();
+    player->hand[1] = empty_card();
+    player->hole_cards[0] = empty_card();
+    player->hole_cards[1] = empty_card();
     player->betSize = 0;
+    player->currentBet = 0;
     player->isActive = true;
+    player->hasFolded = false;
 }
 
 const char *getName(const Player_Info *player)
@@ -241,8 +251,11 @@ void dealHoleCards(Player_Info *player, Card card1, Card card2)
         return;
     }
 
-    player->playerCards[0] = card1;
-    player->playerCards[1] = card2;
+    player->playerCards = player->hand;
+    player->hand[0] = card1;
+    player->hand[1] = card2;
+    player->hole_cards[0] = card1;
+    player->hole_cards[1] = card2;
 }
 
 void resetBetSize(Player_Info *player)

@@ -1,9 +1,7 @@
 #ifndef ENUM_H 
 #define ENUM_H
 
-#include <gtk/gtk.h>
-
-typedef cairo_surface_t Icon;
+typedef struct _cairo_surface Icon;
 
 enum {
     WINDOW_HEIGHT = 800, 

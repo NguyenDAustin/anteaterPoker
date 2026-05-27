@@ -2,6 +2,7 @@
 #include "gui.h"
 #include "communication.h"
 #include "poker_protocol.h"
+#include <string.h>
 
 const char *TITLE = "ANTEATER POKER";
 
@@ -135,7 +136,7 @@ Player_Info *getPlayerInfo(const Poker_Gui *pokerGui, int playerNum)
     return pokerGui->playerInfo[playerNum];
 }
 
-char *getPlayerName(const Player_Info **playerInfo, int playerNum)
+const char *getPlayerName(const Player_Info **playerInfo, int playerNum)
 {
     if (!playerInfo || !(playerInfo[playerNum]) || !(playerInfo[playerNum]->name))
     {
@@ -277,7 +278,8 @@ void setPlayerName(Player_Info **playerInfo, const char *playerName, int playerN
         printf("ERROR: player info or player #%d is NULL cannot set player name\n", playerNum);
         return;
     }
-    playerInfo[playerNum]->name = playerName;
+    strncpy(playerInfo[playerNum]->name, playerName, sizeof(playerInfo[playerNum]->name) - 1);
+    playerInfo[playerNum]->name[sizeof(playerInfo[playerNum]->name) - 1] = '\0';
 }
 
 void setChipCount(Player_Info **playerInfo, int chipCount, int playerNum)
@@ -454,11 +456,95 @@ void setPlayerNames(Poker_Gui *pokerGui, char **names)
     }
 }
 
+static void copyGameStateToGui(Poker_Gui *pokerGui, const GameState *game)
+{
+    if (!pokerGui || !game || !pokerGui->playerInfo) {
+        return;
+    }
+
+    pokerGui->turn = game->currentPlayerIndex;
+    pokerGui->pot = game->pot;
+    pokerGui->dealerCards = (Card *)game->board.cards;
+
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        Player_Info *guiPlayer = pokerGui->playerInfo[i];
+        const Player_Info *statePlayer = &game->players[i];
+
+        if (!guiPlayer) {
+            continue;
+        }
+
+        strncpy(guiPlayer->name, statePlayer->name, sizeof(guiPlayer->name) - 1);
+        guiPlayer->name[sizeof(guiPlayer->name) - 1] = '\0';
+        guiPlayer->chips = statePlayer->chips;
+        guiPlayer->currentBet = statePlayer->currentBet;
+        guiPlayer->hasFolded = statePlayer->hasFolded;
+        guiPlayer->isActive = statePlayer->isActive;
+        guiPlayer->hole_cards[0] = statePlayer->hole_cards[0];
+        guiPlayer->hole_cards[1] = statePlayer->hole_cards[1];
+        guiPlayer->playerCards = guiPlayer->hole_cards;
+    }
+}
+
+static char *askPlayerName(GtkWindow *parent)
+{
+    GtkWidget *dialog = gtk_dialog_new_with_buttons("Player Name",
+                                                    parent,
+                                                    GTK_DIALOG_MODAL,
+                                                    "Join",
+                                                    GTK_RESPONSE_ACCEPT,
+                                                    NULL);
+    GtkWidget *contentArea = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    GtkWidget *entry = gtk_entry_new();
+
+    gtk_entry_set_max_length(GTK_ENTRY(entry), 19);
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entry), "Enter your name");
+    gtk_box_pack_start(GTK_BOX(contentArea), entry, FALSE, FALSE, 10);
+    gtk_widget_show_all(dialog);
+
+    char *playerName = NULL;
+    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+        const char *typedName = gtk_entry_get_text(GTK_ENTRY(entry));
+        if (typedName && typedName[0] != '\0') {
+            playerName = g_strdup(typedName);
+        }
+    }
+
+    gtk_widget_destroy(dialog);
+
+    if (!playerName) {
+        playerName = g_strdup("Player");
+    }
+
+    return playerName;
+}
+
+static void sendPlayerName(Poker_Gui *pokerGui)
+{
+    char message[POKER_MESSAGE_SIZE];
+    char *playerName = askPlayerName(GTK_WINDOW(pokerGui->Window));
+
+    setPlayerName(pokerGui->playerInfo, playerName, 0);
+
+    if (!formatPlayerNameMessage(message, sizeof(message), playerName)) {
+        printf("ERROR: was not able to format name message\n");
+        g_free(playerName);
+        return;
+    }
+
+    if (sendMessage(getSocket(pokerGui), message) < 0) {
+        printf("ERROR: was not able to send name message\n");
+    }
+
+    g_free(playerName);
+}
+
 void allocatePlayerInfos(Player_Info **playerInfo)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        playerInfo[i] = g_malloc(sizeof(Player_Info));
+        playerInfo[i] = g_malloc0(sizeof(Player_Info));
+        playerInfo[i]->playerCards = playerInfo[i]->hole_cards;
     }
 }
 
@@ -568,6 +654,15 @@ static gboolean onServerMessage(GIOChannel *channel, GIOCondition condition, gpo
     }
 
     printf("server says: %s", buffer);
+
+    if (strstr(buffer, "Turn = ") != NULL) {
+        GameState updatedGame;
+        initGameState(&updatedGame);
+        parseFullGameState(buffer, &updatedGame);
+        copyGameStateToGui(pokerGui, &updatedGame);
+        gtk_widget_queue_draw(getPokerTable(pokerGui));
+    }
+
     return TRUE;
 }
 
@@ -657,6 +752,8 @@ void create_poker_gui(GtkApplication *app, gpointer user_data)
     gtk_box_pack_start(GTK_BOX(buttonBox), raiseSlider, FALSE, FALSE, 0);
     setStyle(raiseSlider, SLIDER_CSS);
     setRaiseSlider(pokerGui, raiseSlider);
+
+    sendPlayerName(pokerGui);
 
     printf("finished creating poker gui\n");
     gtk_widget_show_all(pokerGui->Window);

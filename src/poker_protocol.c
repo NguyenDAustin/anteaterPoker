@@ -1,5 +1,6 @@
 #include "poker_protocol.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -81,6 +82,58 @@ bool formatPokerActionMessage(char* buffer, size_t bufferSize, PokerActionType t
     return charsWritten > 0 && (size_t)charsWritten < bufferSize;
 }
 
+bool parsePlayerNameMessage(const char* message, char* nameBuffer, size_t nameBufferSize)
+{
+    if (!message || !nameBuffer || nameBufferSize == 0) {
+        return false;
+    }
+
+    const char* cursor = message;
+    while (isspace((unsigned char)*cursor)) {
+        cursor++;
+    }
+
+    if (strncmp(cursor, "NAME", 4) != 0 || !isspace((unsigned char)cursor[4])) {
+        return false;
+    }
+
+    cursor += 4;
+    while (isspace((unsigned char)*cursor)) {
+        cursor++;
+    }
+
+    if (*cursor == '\0') {
+        return false;
+    }
+
+    size_t length = strcspn(cursor, "\r\n");
+    while (length > 0 && isspace((unsigned char)cursor[length - 1])) {
+        length--;
+    }
+
+    if (length == 0) {
+        return false;
+    }
+
+    if (length >= nameBufferSize) {
+        length = nameBufferSize - 1;
+    }
+
+    memcpy(nameBuffer, cursor, length);
+    nameBuffer[length] = '\0';
+    return true;
+}
+
+bool formatPlayerNameMessage(char* buffer, size_t bufferSize, const char* playerName)
+{
+    if (!buffer || bufferSize == 0 || !playerName || playerName[0] == '\0') {
+        return false;
+    }
+
+    int charsWritten = snprintf(buffer, bufferSize, "NAME %s\n", playerName);
+    return charsWritten > 0 && (size_t)charsWritten < bufferSize;
+}
+
 // ------------------------ FULL GAME STATE PROTOCOL ------------------------
 
 static Cardtype cardTypeForSuit(int suit)
@@ -113,9 +166,10 @@ bool formatFullGameState(char* buffer, size_t bufferSize, const GameState* gameS
     }
 
     for (int i = 0; i < gameState->numPlayers; i++) {
-        const PlayerState* p = &gameState->players[i];
+        const Player_Info* p = &gameState->players[i];
         written = snprintf(buffer + offset, bufferSize - offset,
-                           " | Player %d Chips = %d | Player %d Folded = %d | Player %d Cards = %d:%d,%d:%d",
+                           " | Player %d Name = %s | Player %d Chips = %d | Player %d Folded = %d | Player %d Cards = %d:%d,%d:%d",
+                           i + 1, p->name,
                            i + 1, p->chips,
                            i + 1, p->hasFolded ? 1 : 0,
                            i + 1,
@@ -226,7 +280,7 @@ void applyPlayerCards(const char* message, GameState* gameState, int playerNum)
 
     int r1, s1, r2, s2;
     if (sscanf(p, "%d:%d,%d:%d", &r1, &s1, &r2, &s2) == 4) {
-        PlayerState* player = &gameState->players[playerNum - 1];
+        Player_Info* player = &gameState->players[playerNum - 1];
         player->hole_cards[0].rank = r1;
         player->hole_cards[0].suit = (Suit)s1;
         player->hole_cards[0].type = cardTypeForSuit(s1);
@@ -234,6 +288,29 @@ void applyPlayerCards(const char* message, GameState* gameState, int playerNum)
         player->hole_cards[1].suit = (Suit)s2;
         player->hole_cards[1].type = cardTypeForSuit(s2);
     }
+}
+
+void applyPlayerName(const char* message, GameState* gameState, int playerNum)
+{
+    if (!message || !gameState || playerNum < 1 || playerNum > MAX_PLAYERS_COUNT) return;
+
+    char key[32];
+    snprintf(key, sizeof(key), "Player %d Name = ", playerNum);
+    const char* p = strstr(message, key);
+    if (!p) return;
+    p += strlen(key);
+
+    size_t length = strcspn(p, "|");
+    while (length > 0 && p[length - 1] == ' ') {
+        length--;
+    }
+
+    if (length >= sizeof(gameState->players[playerNum - 1].name)) {
+        length = sizeof(gameState->players[playerNum - 1].name) - 1;
+    }
+
+    memcpy(gameState->players[playerNum - 1].name, p, length);
+    gameState->players[playerNum - 1].name[length] = '\0';
 }
 
 void parseFullGameState(const char* message, GameState* gameState)
@@ -245,6 +322,7 @@ void parseFullGameState(const char* message, GameState* gameState)
     applyDealerCards(message, gameState);
 
     for (int i = 1; i <= MAX_PLAYERS_COUNT; i++) {
+        applyPlayerName(message, gameState, i);
         applyPlayerChips(message, gameState, i);
         applyPlayerFolded(message, gameState, i);
         applyPlayerCards(message, gameState, i);
