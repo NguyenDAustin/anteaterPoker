@@ -9,7 +9,7 @@ typedef struct Player_Info Player;
 enum {
     WINDOW_HEIGHT = 800, 
     WINDOW_WIDTH = 900,
-    NUM_OF_RANKS = 13,
+    NUM_OF_RANKS = 14,//CHANGED - QUEENCY b/c anteater
     MAX_PLAYERS = 6,
     MAX_PLAYER_CARDS = 2,
     MAX_DEALER_CARDS = 5,

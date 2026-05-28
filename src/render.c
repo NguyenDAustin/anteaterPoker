@@ -4,6 +4,7 @@
 
 const char* CARDS_RESOURCES[MAX_CARDS] = {
     // Hearts
+    "resources/anteater_card.png",
     "resources/two_of_hearts.png",
     "resources/three_of_hearts.png",
     "resources/four_of_hearts.png",
@@ -19,6 +20,7 @@ const char* CARDS_RESOURCES[MAX_CARDS] = {
     "resources/ace_of_hearts.png",
 
     // Diamonds
+     "resources/anteater_card.png",
     "resources/two_of_diamonds.png",
     "resources/three_of_diamonds.png",
     "resources/four_of_diamonds.png",
@@ -34,6 +36,7 @@ const char* CARDS_RESOURCES[MAX_CARDS] = {
     "resources/ace_of_diamonds.png",
 
     // Clubs
+    "resources/anteater_card.png",
     "resources/two_of_clubs.png",
     "resources/three_of_clubs.png",
     "resources/four_of_clubs.png",
@@ -49,6 +52,7 @@ const char* CARDS_RESOURCES[MAX_CARDS] = {
     "resources/ace_of_clubs.png",
 
     // Spades
+    "resources/anteater_card.png",
     "resources/two_of_spades.png",
     "resources/three_of_spades.png",
     "resources/four_of_spades.png",
@@ -161,7 +165,7 @@ void createImages(Icon** imgs, const char** resources, int numOfImgs){
 
 void createCardImages(Icon** imgs, int numOfImgs){
     //uploading the back of card - temp manual solu 
-    imgs[BACK_CARD_INDEX] = imageToSurface(CARDS_RESOURCES[52]); //currently at 52 but change when we add anteater card to 57
+    //imgs[BACK_CARD_INDEX] = imageToSurface(CARDS_RESOURCES[BACK_CARD_INDEX]); //currently at 52 but change when we add anteater card to 57
     createImages(imgs, CARDS_RESOURCES, numOfImgs);
 }
 
@@ -333,7 +337,7 @@ void drawDealerCards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* de
     float xPos = (float)currWidth / 2.0 - (cardsToDeal * targetW/2.0); 
     float yPos = (float)currHeight / 2.0 - targetW/2.0; 
 
-    drawCards(cr, images, MAX_DEALER_CARDS, dealerCards, targetW, targetH, xPos, yPos); 
+    drawCards(cr, images, cardsToDeal, dealerCards, targetW, targetH, xPos, yPos); 
 }
 
 double getTableVerticalPadding(GtkWidget* pokerTable){ 
@@ -443,7 +447,12 @@ void drawPlayer6Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* p
 
 Icon* getCardImage(Icon** images, Card card){  //will deal with anteater cards later... cause idk what the anteater is
     int suit = card.suit; //
-    int index = suit * NUM_OF_RANKS + card.rank - 2;  //-2 b/c rank change for ace to 14
+    int rank = card.rank; 
+    int index = suit * NUM_OF_RANKS + rank - 1; 
+
+    if(suit == ANTEATER_SUIT || rank == ANTEATER){ 
+        return images[0]; //the first card should be an anteater card
+    }
     return images[index]; 
 }
 
@@ -683,61 +692,20 @@ void updatePlayersInfo(Poker_Gui* pokerGui, int* chips, Card** playerCards){
 }
 
 gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //in future game state will be read from user data!!
-    printf("drawing poker table\n");
     Poker_Gui* pokerGui = (Poker_Gui*)user_data; 
     Icon** images = pokerGui->images;  
     GameState* gameState = getGameState(pokerGui); 
 
+     printf("drawing poker table for socket #%d\n", getSocket(pokerGui));
+
+    parseGameStateMessage(pokerGui->stateMsg, gameState);  //this should update game state properly
+
+    
     //for testing purpose 
-    int joinedPlayers = MAX_PLAYERS; 
-    setJoinedPlayers(gameState, joinedPlayers); 
-
-
-    //for testing purpose -- see if I can properly read from game state or no
-    Card card1 = cardCtor(SPADES, ACE); 
-    Card card2 = cardCtor(HEARTS, TEN); 
-    Card card3 = cardCtor(SPADES, TWO); 
-    Card card4 = cardCtor(DIAMONDS, QUEEN); 
-    Card card5 = cardCtor(CLUBS, FIVE); 
-
-    int cardsToDeal = MAX_DEALER_CARDS; 
-    Card test[MAX_DEALER_CARDS] = {card1, card2, card3, card4, card5}; 
-    setDealerCards(gameState, test);
-
+    int joinedPlayers = getJoinedPlayers(gameState); 
     Card* dealerCards = getDealerCards(gameState); 
 
-
-    //for testing purpose -- see if I can properly read from game state or no
-    card1 = cardCtor(CLUBS, THREE); 
-    card2 = cardCtor(HEARTS, FOUR); 
-    Card player1Cards[MAX_PLAYER_CARDS] = {card1, card2}; 
-    
-    card1 = cardCtor(SPADES, KING); 
-    card2 = cardCtor(CLUBS, TWO); 
-    Card player2Cards[MAX_PLAYER_CARDS] = {card1, card2};
-
-    card1 = cardCtor(HEARTS, SEVEN); 
-    card2 = cardCtor(HEARTS, THREE); 
-    Card player3Cards[MAX_PLAYER_CARDS] = {card1, card2};
-
-    Card* player4Cards = NULL;
-
-    Card* player5Cards = NULL; 
-
-    card1 = cardCtor(DIAMONDS, KING); 
-    card2 = cardCtor(HEARTS, FOUR); 
-    Card player6Cards[MAX_PLAYER_CARDS] = {card1, card2};
-
-
-    Card* playerCards[MAX_PLAYERS] = {player1Cards, player2Cards, player3Cards, player4Cards, player5Cards, player6Cards};
-    int chips[MAX_PLAYERS] = {1000, 200, 1091, 4583, 8921, 102000}; 
-    updatePlayersInfo(pokerGui, chips, playerCards);
-    printf("finished updating player info\n");
-
-    ///zrrzy of card arrays --? depending on which player initialize that card array --> rest is auto NULL and thus won't be drawn
-
-    ////////////////////////////////////////////////////
-
+   
     int areaWidth = gtk_widget_get_allocated_width(widget);
     int areaHeight = gtk_widget_get_allocated_height(widget);
     drawTableOutline(cr, areaWidth, areaHeight);
@@ -746,7 +714,25 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
 
     //drawing pot
 
-    setPot(gameState, 152079531); 
+    Round round = getRound(gameState); 
+    int cardsToDeal; 
+
+    if(round == ROUND_PRE_FLOP){
+        cardsToDeal = 0; 
+    }
+    else if(round == ROUND_FLOP){
+        cardsToDeal = 3; 
+    }
+    else if(round == ROUND_TURN){
+        cardsToDeal = 4; 
+    }
+    else if(round == ROUND_RIVER){
+        cardsToDeal = 5; 
+    }
+    else{
+        cardsToDeal = 0; 
+    }
+
     drawPot(cr, pokerGui); 
     drawDealerCards(widget, cr, images, dealerCards, cardsToDeal); //cards to deal aka what turn
 
@@ -760,18 +746,17 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
     drawPlayer6Cards(widget, cr, images, player1Cards);
     */
 
-    printf("finished drawing cards\n");
-
     //drawing player boxes 
     Seat_Info seats[MAX_PLAYERS]; 
     intializePlayerSeats(widget, seats);
-
-    printf("finished initializing player seats\n"); 
-
     drawPlayerBoxes(cr, widget, pokerGui, seats); 
-    drawTurnHighlight(cr, widget, pokerGui, seats[PLAYER_2].xPos, seats[PLAYER_2].yPos); //what about to remove highlight ?
 
-    printf("finished drawing player boxes\n");
+    int currentPlayerIndex = getCurrentPlayerIndex(gameState); 
+
+    printf("CURRENT player index: %d!!!\n", currentPlayerIndex); 
+    drawTurnHighlight(cr, widget, pokerGui, seats[currentPlayerIndex].xPos, seats[currentPlayerIndex].yPos); //what about to remove highlight ?
+    
+    printf("finished drawing poker table\n");
 
     //if end turn draw everyone's cards 
 

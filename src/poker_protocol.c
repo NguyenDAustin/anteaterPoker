@@ -141,6 +141,108 @@ static Cardtype cardTypeForSuit(int suit)
     return (suit == ANTEATER_SUIT) ? ANTEATER_CARD : NORMAL_CARD;
 }
 
+bool formatFullGameState(char *buffer, size_t bufferSize, const GameState *game)
+{
+    if (!buffer || !game || bufferSize == 0) {
+        return false;
+    }
+
+    int offset = 0;
+    int written;
+
+    written = snprintf(buffer + offset, bufferSize - offset,
+        "STATE\n"
+        "pot %d\n"
+        "round %d\n"
+        "currentPlayer %d\n"
+        "dealer %d\n"
+        "currentBet %d\n"
+        "smallBlind %d\n"
+        "bigBlind %d\n"
+        "numPlayers %d\n"
+        "boardCount %d\n",
+        game->pot,
+        game->round,
+        game->currentPlayerIndex,
+        game->dealerIndex,
+        game->currentBet,
+        game->smallBlind,
+        game->bigBlind,
+        game->numPlayers,
+        game->board.count
+    );
+
+    if (written < 0 || (size_t)written >= bufferSize - offset) {
+        return false;
+    }
+
+    offset += written;
+
+    written = snprintf(buffer + offset, bufferSize - offset, "board");
+    if (written < 0 || (size_t)written >= bufferSize - offset) {
+        return false;
+    }
+
+    offset += written;
+
+    for (int i = 0; i < game->board.count; i++) {
+        written = snprintf(buffer + offset, bufferSize - offset,
+            " %d %d",
+            game->board.cards[i].rank,
+            (int)game->board.cards[i].suit
+        );
+
+        if (written < 0 || (size_t)written >= bufferSize - offset) {
+            return false;
+        }
+
+        offset += written;
+    }
+
+    written = snprintf(buffer + offset, bufferSize - offset, "\n");
+    if (written < 0 || (size_t)written >= bufferSize - offset) {
+        return false;
+    }
+
+    offset += written;
+
+    for (int i = 0; i < game->numPlayers; i++) {
+        Player_Info *p = game->players[i];
+
+        if (!p) {
+            return false;
+        }
+
+        written = snprintf(buffer + offset, bufferSize - offset,
+            "player %d %s %d %d %d %d %d %d %d %d\n",
+            i,
+            p->name,
+            p->chips,
+            p->currentBet,
+            p->hasFolded ? 1 : 0,
+            p->isActive ? 1 : 0,
+            p->playerCards[0].rank,
+            (int)p->playerCards[0].suit,
+            p->playerCards[1].rank,
+            (int)p->playerCards[1].suit
+        );
+
+        if (written < 0 || (size_t)written >= bufferSize - offset) {
+            return false;
+        }
+
+        offset += written;
+    }
+
+    written = snprintf(buffer + offset, bufferSize - offset, "END\n");
+    if (written < 0 || (size_t)written >= bufferSize - offset) {
+        return false;
+    }
+
+    return true;
+}
+
+/*
 bool formatFullGameState(char* buffer, size_t bufferSize, const GameState* gameState)
 {
     if (!buffer || bufferSize == 0 || !gameState) { //added player state NULL check
@@ -166,7 +268,7 @@ bool formatFullGameState(char* buffer, size_t bufferSize, const GameState* gameS
     }
 
     int numPlayers = getJoinedPlayers(gameState); 
-    printf("current number of players - %d", numPlayers); 
+    printf("current number of players - %d\n", numPlayers); 
 
     for (int i = 0; i < numPlayers; i++) {
         const Player_Info* p = getPlayerInfo(gameState, i); //changing to the getter and setter ver - queency
@@ -189,6 +291,7 @@ bool formatFullGameState(char* buffer, size_t bufferSize, const GameState* gameS
 
     return true;
 }
+*/ //old format
 
 void applyTurn(const char* message, GameState* gameState)
 {

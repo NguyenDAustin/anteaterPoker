@@ -81,7 +81,7 @@ void moneyBuilder(char* text, int chipCount){ //123456 --> 123456 //     ,456   
     text[backIndex + 1] = '\0';
 }
 
-void drawPlayerInfoBox(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, Player_Info* playerInfo, double xPos, double yPos){ //the x and y pos that you want to start drawing at (left corner)
+void drawPlayerInfoBox(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, Player_Info* playerInfo, double xPos, double yPos, bool currPlayer){ //the x and y pos that you want to start drawing at (left corner)
     printf("drawing player info box\n");
     int borderWidth = 3.0;
     int avatarBorderWidth = borderWidth * 0.5;  
@@ -91,8 +91,6 @@ void drawPlayerInfoBox(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, Pl
     const char* playerName = playerInfo->name;
     Icon* avatarImg = playerInfo->avatarImg;
     Card* playerCards = playerInfo->playerCards;
-
-    printf("finished loading all info for player box\n");
 
     //loading heights and width
     double boxHeight = getPlayerBoxHeight(drawArea);
@@ -149,19 +147,30 @@ void drawPlayerInfoBox(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, Pl
     drawText(cr, CHIP_COUNT_TEXT_COLOR, chipCount, chipTextFontSize, chipTextXPos, chipTextYPos); 
 
     //add the cards -
-    double cardsTotalW = MAX_PLAYER_CARDS * cardW + (MAX_PLAYER_CARDS - 1) * getCardGap(drawArea);
-    double cardYPos = getCenter(yPos + borderWidth, yPos + boxHeight - borderWidth) - (cardH/2.0); //center --> make helper function
-    double cardXPos = xPos + boxWidth - cardsTotalW - sidePadding;  //card width //double cardsTotalW = MAX_PLAYER_CARDS * cardW + (MAX_PLAYER_CARDS - 1) * cardGap;
-    drawCards(cr, images, MAX_PLAYER_CARDS, playerCards, cardW, cardH, cardXPos, cardYPos); 
-    
+    if(currPlayer){
+        double cardsTotalW = MAX_PLAYER_CARDS * cardW + (MAX_PLAYER_CARDS - 1) * getCardGap(drawArea);
+        double cardYPos = getCenter(yPos + borderWidth, yPos + boxHeight - borderWidth) - (cardH/2.0); //center --> make helper function
+        double cardXPos = xPos + boxWidth - cardsTotalW - sidePadding;  //card width //double cardsTotalW = MAX_PLAYER_CARDS * cardW + (MAX_PLAYER_CARDS - 1) * cardGap;
+        drawCards(cr, images, MAX_PLAYER_CARDS, playerCards, cardW, cardH, cardXPos, cardYPos); 
+    }
+   
     cairo_restore(cr);
 }
+
+
 
 void drawPlayerBoxes(cairo_t* cr, GtkWidget* pokerTable, Poker_Gui* pokerGui, Seat_Info* seats){ 
     Icon** avatarImages = getAvatarImages(pokerGui); 
     GameState* gameState = getGameState(pokerGui);
+    int joinedPlayers = getJoinedPlayers(gameState); 
+    int myIndex = pokerGui->playerNum - 1; //-1 b/c index 
 
-    for(int i = 0; i < MAX_PLAYERS; i++){ //prob will have to change to # of players joined then add something to draw robots
-        drawPlayerInfoBox(cr, pokerTable, pokerGui, getPlayerInfo(gameState, i), seats[i].xPos, seats[i].yPos); //probably add some bool to say whether active player or not
+    for(int i = 0; i < joinedPlayers; i++){ //prob will have to change to # of players joined then add something to draw robots
+        if(i == myIndex){
+            drawPlayerInfoBox(cr, pokerTable, pokerGui, getPlayerInfo(gameState, i), seats[i].xPos, seats[i].yPos, true); //probably add some bool to say whether active player or not
+        }
+        else{
+            drawPlayerInfoBox(cr, pokerTable, pokerGui, getPlayerInfo(gameState, i), seats[i].xPos, seats[i].yPos, false); //probably add some bool to say whether active player or not
+        }
     }
 }

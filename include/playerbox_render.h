@@ -18,7 +18,7 @@ void drawRoundedBoxPath(cairo_t* cr, double x, double y, double boxWidth, double
 void drawAvatar(cairo_t* cr, Icon* avatarImg, double xPos, double yPos, double avatarWidth, double avatarHeight, double inset); 
 
 //DRAW FUNCTIONS
-void drawPlayerInfoBox(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, Player_Info* playerInfo, double xPos, double yPos); 
+void drawPlayerInfoBox(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, Player_Info* playerInfo, double xPos, double yPos, bool currPlayer); 
 void drawPlayerBoxes(cairo_t* cr, GtkWidget* pokerTable, Poker_Gui* pokerGui, Seat_Info* seats); 
 
 void moneyBuilder(char* text, int chipCount); //turns number into text with commas

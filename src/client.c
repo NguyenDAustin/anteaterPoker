@@ -58,8 +58,11 @@ int main(int argc, char *argv[])
         
         n = write(sockfd,buffer,strlen(buffer)); //returns number of bytes written
 
-        if (n < 0) 
-            error("ERROR writing to socket");
+        if (n < 0){
+            perror("ERROR writing to socket");
+            close(clientSockets[playerIndex]);
+            clientSockets[playerIndex] = -1;
+        }
 
         bzero(buffer,256);
         n = read(sockfd,buffer,255);

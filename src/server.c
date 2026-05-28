@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <signal.h>
 
 #include "communication.h"
 #include "game.h"
@@ -17,7 +18,7 @@
 #include "state.h"
 
 
-#define SERVER_MAX_PLAYERS 3 //the max amount of clients the server will allow to connect
+#define SERVER_MAX_PLAYERS 6//the max amount of clients the server will allow to connect
 #define STARTING_CHIPS 1000
 
 void error(const char *msg)
@@ -63,6 +64,9 @@ int broadcastToAll(int* clientSockets, int joinedPlayers, const char* message){
     int result = 0;
 
     for (int i = 0; i < joinedPlayers; i++) {
+        if(clientSockets[i] < 0) 
+            continue; //skipping dead sockets 
+
         if (sendMessage(clientSockets[i], message) < 0) {
             printf("ERROR: failed to broadcast to player %d\n", i + 1);
             result = -1;
@@ -103,6 +107,11 @@ void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers, Game
         initPlayer(game->players[*joinedPlayers], defaultName, *joinedPlayers, STARTING_CHIPS, HUMAN_PLAYER);
         game->numPlayers = *joinedPlayers + 1;
 
+        //added by queency -> send player number
+        char welcomeMessage[64]; 
+        snprintf(welcomeMessage, sizeof(welcomeMessage), "YOU_ARE %d\n", playerNumber);
+        sendMessage(newClientSocket, welcomeMessage);
+
         printf("client has been accepted as player %d\n", playerNumber); 
         clientSockets[*joinedPlayers] = newClientSocket; 
         (*joinedPlayers)++; 
@@ -112,76 +121,94 @@ void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers, Game
 
 void readMessage(int* clientSockets, int joinedPlayers, int playerIndex, GameState* game){ 
     int clientSocket = clientSockets[playerIndex];
-    char buffer[256]; 
+
+    
+    if (clientSocket < 0) {
+        return;
+    }
+
+    char buffer[GAME_STATE_MESSAGE_SIZE]; 
     char stateMessage[GAME_STATE_MESSAGE_SIZE];
     ssize_t n;
     PokerActionMessage action;
     char playerName[20];
 
-    bzero(buffer, 256); 
+    bzero(buffer, GAME_STATE_MESSAGE_SIZE); 
+    bzero(stateMessage, GAME_STATE_MESSAGE_SIZE); 
 
     printf("message being read\n"); 
 
     n = receiveMessage(clientSocket, buffer, sizeof(buffer));
 
-    if (n < 0)
-        error("ERROR reading from socket");
-
-    if (n == 0) {
-        printf("client disconnected\n");
-        return;
-    }
-
     if (parsePlayerNameMessage(buffer, playerName, sizeof(playerName))) {
-
         strncpy(game->players[playerIndex]->name, playerName, sizeof(game->players[playerIndex]->name) - 1);
         game->players[playerIndex]->name[sizeof(game->players[playerIndex]->name) - 1] = '\0';
         printf("Player %d name set to %s\n", playerIndex + 1, game->players[playerIndex]->name); 
 
         if (formatFullGameState(stateMessage, sizeof(stateMessage), game)) {
-            printf("done reading msg\n");
             n = broadcastToAll(clientSockets, joinedPlayers, stateMessage);
         } else {
             n = sendMessage(clientSocket, "Name saved\n");
         } 
-        printf("done reading msg\n");
     } else if (parsePokerActionMessage(buffer, &action)) {
         printf("Player action: %s amount=%d\n", pokerActionTypeToString(action.type), action.amount);
-        n = sendMessage(clientSocket, "I got your poker action\n");
+        PlayerAction playerAction = {.actionType = action.type, .amount = action.amount}; 
+        handlePlayerAction(game, playerIndex, playerAction); //added here
     } else {
         printf("Unknown client message: %s\n", buffer);
         n = sendMessage(clientSocket, "Unknown message\n");
     }
 
-    if (n < 0)
-        error("ERROR writing to socket");
+    if (n < 0){
+        perror("ERROR writing to socket");
+        close(clientSockets[playerIndex]);
+        clientSockets[playerIndex] = -1;
+    }
 
+
+    if (n == 0) {
+        printf("client disconnected\n");
+        close(clientSockets[playerIndex]);
+        clientSockets[playerIndex] = -1;
+        return;
+    }
+
+    printf("done reading msg\n");
 }
 
-
-void lobby(int serverSocket, int* clientSockets){ 
+void lobby(int serverSocket, int* clientSockets)
+{ 
     int joinedPlayers = 0; 
     int max_fd = serverSocket; 
     int newClientSocket; 
+    bool gameStarted = false;
 
     printf("trying to create lobby\n");
 
+    GameState* game = malloc(sizeof(GameState));  
 
-    GameState* game = malloc(sizeof(GameState)); 
+    if (!game) {
+        perror("malloc game failed");
+        exit(1);
+    }
+
     initGameState(game);
 
     printf("LOBBY CREATED - MULTI CONNECTION VERSION\n");
 
-    while(true){ //watch 
+    while (true) {
         fd_set socketList; 
         FD_ZERO(&socketList); 
         FD_SET(serverSocket, &socketList);
 
-        //listen to current clients 
-        for(int i = 0; i < joinedPlayers; i++){ 
+        max_fd = serverSocket;
+
+        for (int i = 0; i < joinedPlayers; i++) { 
+            if (clientSockets[i] < 0) {
+                    continue; //SKIP DEAD SOCKETS
+            }
             newClientSocket = clientSockets[i]; 
-            
-            FD_SET(newClientSocket, &socketList); //add client socket to be read from 
+            FD_SET(newClientSocket, &socketList);
 
             if (clientSockets[i] > max_fd) { 
                 max_fd = clientSockets[i];
@@ -190,18 +217,48 @@ void lobby(int serverSocket, int* clientSockets){
 
         select(max_fd + 1, &socketList, NULL, NULL, NULL);
 
-        //accept new clients 
-        if(FD_ISSET(serverSocket, &socketList))
-            acceptClient(clientSockets, serverSocket, &joinedPlayers, game); 
+        if (FD_ISSET(serverSocket, &socketList)) {
+            acceptClient(clientSockets, serverSocket, &joinedPlayers, game);
 
-        //reading current messages
+            if (joinedPlayers >= 3 && !gameStarted) { 
+                printf("Starting new round!\n");
+                startNewRound(game);
+                gameStarted = true;
+
+                broadcastToAll(clientSockets, joinedPlayers, "START_GAME\n"); 
+
+                char buffer[4096];
+                if (formatFullGameState(buffer, sizeof(buffer), game)) {
+                    broadcastToAll(clientSockets, joinedPlayers, buffer);
+                }
+            }
+        }
+
         for (int i = 0; i < joinedPlayers; i++) {
-            if (FD_ISSET(clientSockets[i], &socketList))
+             if (clientSockets[i] < 0) {
+                    continue; //SKIP DEAD SOCKETS
+                }
+
+            if (FD_ISSET(clientSockets[i], &socketList)) {
                 readMessage(clientSockets, joinedPlayers, i, game);
+
+                char buffer[4096];
+                if (formatFullGameState(buffer, sizeof(buffer), game)) {
+                    broadcastToAll(clientSockets, joinedPlayers, buffer);
+                }
+
+                if (game->round == ROUND_SHOWDOWN) {
+                    printf("Round ended. Starting next round.\n");
+                    startNewRound(game);
+
+                    if (formatFullGameState(buffer, sizeof(buffer), game)) {
+                        broadcastToAll(clientSockets, joinedPlayers, buffer);
+                    }
+                }
+            }
         }
     }
 }
-
 
 
 int main(int argc, char *argv[])
@@ -209,6 +266,7 @@ int main(int argc, char *argv[])
     //array of client sockets --> aka players 
 
     printf("WE ARE RUNNING THE NEW VERSION\n"); 
+    signal(SIGPIPE, SIG_IGN); //to stop disconnection
 
     int clientSockets[SERVER_MAX_PLAYERS]; // clientSockets[i] = socket fd of player (i + 1).
                                     // first joiner is player 1 at index 0, second is

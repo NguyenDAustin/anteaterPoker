@@ -27,20 +27,21 @@ void init_deck(Deck *deck) //initalize deck
     deck->top = 0;
 }
 
-void shuffle(Deck *deck)
+void shuffle(Deck *deck) //fixed shuffle - queency
 {
     srand(time(NULL));
 
     for (int i = DECK_SIZE - 1; i > 0; i--) {
-        int j = rand() % (i+1);
+        int j = rand() % (i + 1);
 
         Card temp = deck->cards[i];
         deck->cards[i] = deck->cards[j];
-        deck->cards[i] = temp;
+        deck->cards[j] = temp;
     }
 
     deck->top = 0;
 }
+
 
 Card deal(Deck *deck)
 {

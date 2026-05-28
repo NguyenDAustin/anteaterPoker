@@ -7,8 +7,10 @@
 #include "deck.h"
 #include "playerbox_render.h"
 #include "state.h"
+#include "state_protocol.h"
+#include "communication_bundle.h"
 
-#define MAX_CARDS 56
+#define MAX_CARDS 57 //b/c we including back of card
 
 extern const char* CARDS_RESOURCES[MAX_CARDS]; 
 

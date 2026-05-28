@@ -406,29 +406,6 @@ static char *askPlayerName(GtkWindow *parent)
     return playerName;
 }
 
-static void sendPlayerName(Poker_Gui *pokerGui)
-{
-    char message[POKER_MESSAGE_SIZE];
-    char *playerName = askPlayerName(GTK_WINDOW(pokerGui->Window));
-    
-    GameState* gameState = getGameState(pokerGui); 
-    Player_Info* player = getPlayerInfo(gameState, 0); //1st player as default 
-    setName(player, playerName); 
-
-    if (!formatPlayerNameMessage(message, sizeof(message), playerName)) {
-        printf("ERROR: was not able to format name message\n");
-        g_free(playerName);
-        return;
-    }
-
-    if (sendMessage(getSocket(pokerGui), message) < 0) {
-        printf("ERROR: was not able to send name message\n");
-    }
-
-    g_free(playerName);
-}
-
-
 void onFoldClicked(GtkWidget *button, gpointer user_data)
 {
     Poker_Gui *pokerGui = user_data;
@@ -518,30 +495,53 @@ static gboolean onServerMessage(GIOChannel *channel, GIOCondition condition, gpo
 {
     Poker_Gui *pokerGui = user_data;
 
-    if (condition & (G_IO_HUP | G_IO_ERR))
-    {
-        printf("server disconnected\n");
-        return FALSE;
+    printf("onServerMessage condition = %d\n", condition);
+
+    if (condition & G_IO_IN) {
+        int socket = getSocket(pokerGui);
+
+        char buffer[4096];
+        memset(buffer, 0, sizeof(buffer));
+
+        ssize_t n = receiveMessage(socket, buffer, sizeof(buffer) - 1);
+
+        if (n <= 0) {
+            printf("server disconnected while reading\n");
+            return FALSE;
+        }
+
+        buffer[n] = '\0';
+
+        printf("server says:\n%s\n", buffer);
+
+        GameState *gameState = getGameState(pokerGui);
+
+        bool parsed = parseGameStateMessage(buffer, gameState);
+
+        printf("parsed = %d, pot = %d, numPlayers = %d\n",
+               parsed,
+               gameState->pot,
+               gameState->numPlayers);
+
+        for (int i = 0; i < gameState->numPlayers; i++) {
+            printf("player %d: name=%s chips=%d currentBet=%d folded=%d active=%d\n",
+                   i,
+                   gameState->players[i]->name,
+                   gameState->players[i]->chips,
+                   gameState->players[i]->currentBet,
+                   gameState->players[i]->hasFolded,
+                   gameState->players[i]->isActive);
+        }
+
+        if (parsed) {
+            pokerGui->stateMsg = buffer; 
+            gtk_widget_queue_draw(getPokerTable(pokerGui));
+        }
     }
 
-    int socket = getSocket(pokerGui);
-    char buffer[256];
-    ssize_t n = receiveMessage(socket, buffer, sizeof(buffer));
-
-    if (n <= 0)
-    {
-        printf("server disconnected\n");
+    if (condition & (G_IO_HUP | G_IO_ERR | G_IO_NVAL)) {
+        printf("server disconnected or socket error, condition=%d\n", condition);
         return FALSE;
-    }
-
-    printf("server says: %s", buffer);
-
-    if (strstr(buffer, "Turn = ") != NULL) {
-        GameState updatedGame;
-        initGameState(&updatedGame);
-        parseFullGameState(buffer, &updatedGame);
-        //copyGameStateToGui(pokerGui, &updatedGame); - no need for this
-        gtk_widget_queue_draw(getPokerTable(pokerGui));
     }
 
     return TRUE;
@@ -550,30 +550,35 @@ static gboolean onServerMessage(GIOChannel *channel, GIOCondition condition, gpo
 void create_poker_gui(GtkApplication *app, gpointer user_data)
 {
     printf("Creating poker gui\n");
+    Communication_Bundle* bundle = user_data; 
     Poker_Gui *pokerGui = g_malloc(sizeof(Poker_Gui));
     setWindow(pokerGui, createWindow(app));
 
-    int socket = GPOINTER_TO_INT(user_data);
-    setSocket(pokerGui, socket);
+    //setting socket
+    int socket = bundle->socket; 
+    setSocket(pokerGui, socket); 
 
-    GIOChannel *serverChannel = g_io_channel_unix_new(socket);
-    g_io_add_watch(serverChannel, G_IO_IN | G_IO_HUP | G_IO_ERR, onServerMessage, pokerGui);
-    g_io_channel_unref(serverChannel);
+    //setting player num
+    int playerNum = bundle->playerNum; 
+    pokerGui->playerNum = playerNum; 
 
+    //setting message 
+    pokerGui->stateMsg = bundle->stateMsg; 
+
+    //loading css stuff
     loadCss(pokerGui->Window, CSS);
     loadFont(PIXEL_FONT_RESOURCE);
     loadFont(PIXEL_FONT_RESOURCE2);
     
-    //allocating game state 
+    //allocating game state -- updating  once with initial state 
     GameState* gameState = malloc(sizeof(GameState)); 
     initGameState(gameState); 
     setGameState(pokerGui, gameState); 
-
-    // default initializing playerInfos --> for active player -->
-
+    parseFullGameState(pokerGui->stateMsg, gameState); 
+    
     // creating card images
     pokerGui->images = g_malloc(sizeof(Icon *) * (MAX_CARDS + 1)); // because we want to include back of card
-    createCardImages(pokerGui->images, 52);                        // 52 for now because we don't have anteater card png yet
+    createCardImages(pokerGui->images, 57); //CHANGED - QUEENCY                       // 52 for now because we don't have anteater card png yet
 
     // creating avatar images
     pokerGui->avatarImages = g_malloc(sizeof(Icon *) * MAX_PLAYERS); // allocate for max players which is 6
@@ -638,7 +643,11 @@ void create_poker_gui(GtkApplication *app, gpointer user_data)
     setStyle(raiseSlider, SLIDER_CSS);
     setRaiseSlider(pokerGui, raiseSlider);
 
-    sendPlayerName(pokerGui);
+
+    //update 
+    GIOChannel *serverChannel = g_io_channel_unix_new(socket);
+    g_io_add_watch(serverChannel, G_IO_IN | G_IO_HUP | G_IO_ERR | G_IO_NVAL, onServerMessage, pokerGui);
+    g_io_channel_unref(serverChannel);
 
     printf("finished creating poker gui\n");
     gtk_widget_show_all(pokerGui->Window);

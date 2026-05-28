@@ -36,7 +36,7 @@ typedef struct GameState {
     int turnNumber;
     int smallBlind;
     int bigBlind;
-    int currentBet; // current highest bet for the round
+    int currentBet; // current highest bet for the round --> right now its by player --> not true highest bet 
     Round round;
 } GameState;
 
@@ -80,8 +80,6 @@ void loadGameState(GameState *game, const char *filename);
 int nextActivePlayerIndex(const GameState *game);
 bool advanceToNextPlayer(GameState *game);
 void advanceToNextRound(GameState *game);
-
-Card empty_card(void);
 
 
 #endif // STATE_H

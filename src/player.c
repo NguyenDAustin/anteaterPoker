@@ -31,14 +31,11 @@ void initPlayer(Player_Info *player, const char *name, int seat, int chips, Play
 
     //player->playerCards = player->hand; - ok remove for now b/c 
 
-    /*
-    player->hand[0] = empty_card(); //changed this --> empty cards are denoted by NULL - queency
-    player->hand[1] = empty_card();
     player->playerCards[0] = empty_card();
     player->playerCards[1] = empty_card();
-    */
+    
 
-    player->playerCards = NULL; 
+    //player->playerCards = NULL; 
     
    
 }
@@ -53,14 +50,10 @@ void resetPlayer(Player_Info *player)
 
     //player->playerCards = player->hand;
 
-    /*
-    player->hand[0] = empty_card();
-    player->hand[1] = empty_card();
     player->playerCards[0] = empty_card();
     player->playerCards[1] = empty_card();
-    */ 
 
-    player->playerCards = NULL; //reset this way
+    //player->playerCards = NULL; //reset this way
     player->betSize = 0;
     player->currentBet = 0;
     player->isActive = true;
@@ -248,7 +241,9 @@ void setCards(Player_Info* player, Card* playerCards){
         printf("ERROR: player is NULL cannot set cards\n");
         return;
     }
-    player->playerCards = playerCards; 
+
+    player->playerCards[0] = playerCards[0]; 
+    player->playerCards[1] = playerCards[1]; 
 }
 
 void foldPlayer(Player_Info *player)
@@ -274,13 +269,6 @@ void dealHoleCards(Player_Info *player, Card card1, Card card2)
 
     player->playerCards[0] = card1; 
     player->playerCards[1] = card2;
-
-    /*
-    player->hand[0] = card1;
-    player->hand[1] = card2;
-    player->playerCards[0] = card1;
-    player->playerCards[1] = card2;
-    */
 }
 
 void resetBetSize(Player_Info *player)

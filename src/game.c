@@ -75,6 +75,7 @@ static int nextActingPlayerFrom(const GameState *game, int startIndex)
 
 static int payChips(GameState *game, Player_Info *player, int amount)
 {
+    printf("paying chips\n"); 
     if (!game || !player || amount <= 0) {
         return 0;
     }
@@ -89,6 +90,7 @@ static int payChips(GameState *game, Player_Info *player, int amount)
     player->betSize += paid;
     game->pot += paid;
 
+    printf("paid chips - player chip count %d\n", player->chips); 
     return paid;
 }
 
@@ -140,8 +142,6 @@ static void dealHoleCardsToActivePlayers(GameState *game)
             if (player->isActive && player->chips > 0) {
                 Card dealt = deal(game->deck);
                 player->playerCards[card] = dealt;
-                //player->hand[card] = dealt;
-                //player->playerCards = player->hand;
             }
         }
     }
@@ -158,19 +158,27 @@ static void dealBoardCard(GameState *game)
 
 void startNewRound(GameState *game)
 {
+    printf("starting new round\n");
+    
     if (!game || game->numPlayers <= 0) {
+        printf("ERROR: game state is null\n");
         return;
     }
 
-    int previousDealer = game->dealerIndex;
+
+    int previousDealer = getDealerIndex(game); 
+    int numPlayers = getJoinedPlayers(game); 
+
+    printf("finished setting dealer index etc\n"); 
+
     resetGameState(game);
 
-    for (int i = 0; i < game->numPlayers; i++) {
-        Player_Info *player = game->players[i];
+    for (int i = 0; i < numPlayers; i++) {
+        Player_Info *player = getPlayerInfo(game, i); 
         player->hasFolded = false;
         player->isActive = player->chips > 0;
-        player->playerCards = NULL; 
-        //setPlayerCards(player, empty_card(), empty_card());
+        player->playerCards[0] = empty_card(); 
+        player->playerCards[1] = empty_card(); 
     }
 
     if (countPlayersInHand(game) < 2) {
@@ -178,12 +186,19 @@ void startNewRound(GameState *game)
         return;
     }
 
+     printf("finished count players in hand\n");
+
     game->dealerIndex = nextPlayerFrom(game, previousDealer);
     if (game->dealerIndex < 0) {
         game->dealerIndex = 0;
     }
 
+    printf("finished doing something to dealer index\n");
+
+
     dealHoleCardsToActivePlayers(game);
+
+    printf("finished dealing cards to all players\n");
 
     int smallBlindIndex = nextPlayerFrom(game, game->dealerIndex);
     int bigBlindIndex = nextPlayerFrom(game, smallBlindIndex);
@@ -201,6 +216,7 @@ void startNewRound(GameState *game)
     if (game->currentPlayerIndex < 0) {
         game->currentPlayerIndex = game->dealerIndex;
     }
+    printf("finished starting new round\n");
 }
 
 void dealCommunityCards(GameState *game)
@@ -244,7 +260,7 @@ GameActionResult handlePlayerAction(GameState *game, int playerIndex, PlayerActi
         return GAME_ACTION_NOT_PLAYERS_TURN;
     }
 
-    Player_Info *player = game->players[playerIndex];
+    Player_Info *player = getPlayerInfo(game, playerIndex);
 
     switch (action.actionType) {
     case FOLD:
@@ -302,6 +318,7 @@ GameActionResult handlePlayerAction(GameState *game, int playerIndex, PlayerActi
     }
 
     if (isBettingPhaseComplete(game)) {
+        printf("we are advanding round!\n");
         advanceGameRound(game);
         return GAME_ACTION_ROUND_COMPLETE;
     }

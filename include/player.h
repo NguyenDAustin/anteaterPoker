@@ -20,7 +20,7 @@ typedef struct Player_Info
     //Card hand[2];
     //Card playerCards[2];
 
-    Card *playerCards;
+    Card playerCards[MAX_PLAYER_CARDS];
     Icon *avatarImg;
     int betSize;
     int currentBet;
@@ -33,12 +33,15 @@ typedef struct Player_Info
 
 typedef enum
 {
-    FOLD,
-    CHECK,
-    CALL,
-    BET,
-    RAISE
+    FOLD = 1,
+    CHECK = 2,
+    CALL = 3,
+    BET = 4,
+    RAISE = 5
 } PlayerActionType;
+
+
+
 
 typedef struct
 {

@@ -3,4 +3,6 @@
 
 #include "deck.h"
 
+Card empty_card(); 
+
 #endif 

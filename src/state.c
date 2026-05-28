@@ -4,13 +4,7 @@
 #include "state.h"
 
 // Function to create an empty card
-Card empty_card() {
-    Card card;
-    card.rank = -1; 
-    card.suit = HEARTS; 
-    card.type = NORMAL_CARD; 
-    return card;
-}
+
 
 //check if a player is active and has not folded
 static bool isGamePlayerActive(const GameState *game, int playerIndex)
@@ -315,10 +309,11 @@ int getPot(const GameState* game){
     return game->pot; 
 }
 
+
 //to properly allocate player info 
-void allocatePlayerInfos(Player_Info **playerInfo)
+void allocatePlayerInfos(Player_Info **playerInfo, int players)
 {
-    for (int i = 0; i < MAX_PLAYERS; i++)
+    for (int i = 0; i < players; i++)
     {
         playerInfo[i] = malloc(sizeof(Player_Info));
     }
@@ -332,16 +327,15 @@ void initGameState(GameState *game)
         return;
     }
 
+    printf("joiner players: %d", game->numPlayers);
     game->deck = malloc(sizeof(Deck)); //alloc memory
-    game->players = malloc(sizeof(Player_Info) * MAX_PLAYERS); 
-    allocatePlayerInfos(game->players); 
+    game->players = malloc(sizeof(Player_Info*) * MAX_PLAYERS);
+    allocatePlayerInfos(game->players, MAX_PLAYERS); 
 
     //memset(game, 0, sizeof(GameState)); --> ok i allocate memory outside of function (in lobby) - queency
 
-    printf("trying to create deck/shuffle\n"); 
     init_deck(game->deck);
     shuffle(game->deck);
-    printf("created deck/shuffle\n"); 
 
     game->numPlayers = 0;
     game->dealerIndex = 0;
@@ -354,27 +348,20 @@ void initGameState(GameState *game)
     game->round = ROUND_PRE_FLOP;
     game->board.count = 0;
 
-    printf("finished initializing basic game state stuff\n"); 
 
     for (int i = 0; i < MAX_DEALER_CARDS; i++) {
         game->board.cards[i] = empty_card();
     }
 
-    printf("finished initializing board\n"); 
-
-    for (int i = 0; i < MAX_PLAYERS_COUNT; i++) {
+    for (int i = 0; i < game->numPlayers; i++) {
         game->players[i]->seat = i;
         game->players[i]->chips = 0;
         game->players[i]->betSize = 0;
         game->players[i]->currentBet = 0;
         game->players[i]->hasFolded = false;
-        game->players[i]->isActive = false;
-        game->players[i]->playerCards = NULL; 
-
-        /*
+        game->players[i]->isActive = true; //true it has to be active right ???
         game->players[i]->playerCards[0] = empty_card(); 
         game->players[i]->playerCards[1] = empty_card();
-        */
     }
 
      printf("finished initializing game state!\n"); 
@@ -388,13 +375,12 @@ void resetGameState(GameState *game)
         return;
     }
 
-
     for (int i = 0; i < game->numPlayers; i++) {
         Player_Info *player = game->players[i];
         player->isActive = true;
         player->currentBet = 0;
         player->betSize = 0;
-        player->playerCards[0] = empty_card();
+        player->playerCards[0] = empty_card(); 
         player->playerCards[1] = empty_card();
     }
 

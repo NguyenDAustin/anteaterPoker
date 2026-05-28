@@ -7,16 +7,18 @@
 #include "state.h"
 
 #define POKER_MESSAGE_SIZE 128
-#define GAME_STATE_MESSAGE_SIZE 1024
+#define GAME_STATE_MESSAGE_SIZE 4096
 
 typedef enum {
     POKER_ACTION_UNKNOWN = 0,
-    POKER_ACTION_FOLD,
-    POKER_ACTION_CHECK,
-    POKER_ACTION_CALL,
-    POKER_ACTION_BET,
-    POKER_ACTION_RAISE
+    POKER_ACTION_FOLD = 1,
+    POKER_ACTION_CHECK = 2,
+    POKER_ACTION_CALL = 3,
+    POKER_ACTION_BET = 4,
+    POKER_ACTION_RAISE = 5
 } PokerActionType;
+
+
 
 typedef struct {
     PokerActionType type;

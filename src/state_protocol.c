@@ -133,7 +133,7 @@ bool parseGameStateMessage(const char* message, GameState* game)
             int rank, suit, consumed;
             while (idx < MAX_DEALER_CARDS &&
                    sscanf(cursor, " %d %d%n", &rank, &suit, &consumed) == 2) {
-                writeCard(game->board.cards[idx], rank, suit);
+                writeCard(&(game->board.cards[idx]), rank, suit);
                 idx++;
                 cursor += consumed;
             }
