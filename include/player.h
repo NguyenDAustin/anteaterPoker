@@ -16,18 +16,20 @@ typedef struct Player_Info
     char name[20];
     int seat;
     int chips;
-    Card hand[2];
-    Card hole_cards[2];
+
+    //Card hand[2];
+    //Card playerCards[2];
+
     Card *playerCards;
     Icon *avatarImg;
     int betSize;
     int currentBet;
     PlayerType type;
     bool isActive;
-    bool hasFolded;
-} Player_Info;
+    bool hasFolded; 
 
-typedef Player_Info Player;
+
+} Player_Info;
 
 typedef enum
 {

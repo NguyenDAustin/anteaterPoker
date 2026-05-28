@@ -43,7 +43,7 @@ bool isValidAnteaterAction(GameState *game, Player *player, Hand *hand){
     if (!player->isActive) {
         return false; // Player has already folded
     }
-    else if (player->hole_cards[0].rank != 0 && player->hole_cards[1].rank != 0) { // if no anteater cards are present, the action is invalid
+    else if (player->playerCards[0].rank != 0 && player->playerCards[1].rank != 0) { // if no anteater cards are present, the action is invalid
         return false;
     }
     return true;
@@ -110,11 +110,11 @@ void applyAnteaterAction(GameState *game, Player *player, Hand *hand){
         return; // Invalid anteater action
     }
     else {
-        if (player->hole_cards[0].rank == 0) {
-            player->hole_cards[0].rank = 0; 
+        if (player->playerCards[0].rank == 0) {
+            player->playerCards[0].rank = 0; 
 
-        } else if (player->hole_cards[1].rank == 0) {
-            player->hole_cards[1].rank = 0; 
+        } else if (player->playerCards[1].rank == 0) {
+            player->playerCards[1].rank = 0; 
         }
 
         

@@ -16,13 +16,13 @@ static bool isPlayerInHand(const GameState *game, int playerIndex)
         return false;
     }
 
-    const Player_Info *player = &game->players[playerIndex];
+    const Player_Info *player = game->players[playerIndex];
     return player->isActive && !player->hasFolded && player->chips >= 0;
 }
 
 static bool canPlayerAct(const GameState *game, int playerIndex)
 {
-    return isPlayerInHand(game, playerIndex) && game->players[playerIndex].chips > 0;
+    return isPlayerInHand(game, playerIndex) && game->players[playerIndex]->chips > 0;
 }
 
 static int countPlayersInHand(const GameState *game)
@@ -102,8 +102,8 @@ static void clearBets(GameState *game)
     game->turnNumber = 0;
 
     for (int i = 0; i < game->numPlayers; i++) {
-        game->players[i].currentBet = 0;
-        game->players[i].betSize = 0;
+        game->players[i]->currentBet = 0;
+        game->players[i]->betSize = 0;
     }
 }
 
@@ -113,7 +113,7 @@ static void postBlind(GameState *game, int playerIndex, int amount)
         return;
     }
 
-    Player_Info *player = &game->players[playerIndex];
+    Player_Info *player = game->players[playerIndex];
     int paid = payChips(game, player, amount);
     if (paid > game->currentBet) {
         game->currentBet = paid;
@@ -122,23 +122,25 @@ static void postBlind(GameState *game, int playerIndex, int amount)
 
 static void setPlayerCards(Player_Info *player, Card first, Card second)
 {
-    player->hole_cards[0] = first;
-    player->hole_cards[1] = second;
+    player->playerCards[0] = first;
+    player->playerCards[1] = second;
+   /*
     player->hand[0] = first;
     player->hand[1] = second;
     player->playerCards = player->hand;
+    */
 }
 
 static void dealHoleCardsToActivePlayers(GameState *game)
 {
     for (int card = 0; card < 2; card++) {
         for (int i = 0; i < game->numPlayers; i++) {
-            Player_Info *player = &game->players[i];
+            Player_Info *player = game->players[i];
             if (player->isActive && player->chips > 0) {
-                Card dealt = deal(&game->deck);
-                player->hole_cards[card] = dealt;
-                player->hand[card] = dealt;
-                player->playerCards = player->hand;
+                Card dealt = deal(game->deck);
+                player->playerCards[card] = dealt;
+                //player->hand[card] = dealt;
+                //player->playerCards = player->hand;
             }
         }
     }
@@ -150,7 +152,7 @@ static void dealBoardCard(GameState *game)
         return;
     }
 
-    setDealerCard(game, game->board.count, deal(&game->deck));
+    setDealerCard(game, game->board.count, deal(game->deck));
 }
 
 void startNewRound(GameState *game)
@@ -163,7 +165,7 @@ void startNewRound(GameState *game)
     resetGameState(game);
 
     for (int i = 0; i < game->numPlayers; i++) {
-        Player_Info *player = &game->players[i];
+        Player_Info *player = game->players[i];
         player->hasFolded = false;
         player->isActive = player->chips > 0;
         setPlayerCards(player, empty_card(), empty_card());
@@ -240,7 +242,7 @@ GameActionResult handlePlayerAction(GameState *game, int playerIndex, PlayerActi
         return GAME_ACTION_NOT_PLAYERS_TURN;
     }
 
-    Player_Info *player = &game->players[playerIndex];
+    Player_Info *player = game->players[playerIndex];
 
     switch (action.actionType) {
     case FOLD:
@@ -314,7 +316,7 @@ bool isBettingPhaseComplete(const GameState *game)
 
     int playersWhoCanAct = 0;
     for (int i = 0; i < game->numPlayers; i++) {
-        const Player_Info *player = &game->players[i];
+        const Player_Info *player = game->players[i];
         if (!isPlayerInHand(game, i) || player->chips == 0) {
             continue;
         }
@@ -374,7 +376,7 @@ int determineWinner(const GameState *game)
     int bestTieValue = -1;
 
     for (int i = 0; i < game->numPlayers; i++) {
-        const Player_Info *player = &game->players[i];
+        const Player_Info *player = game->players[i];
         if (!isPlayerInHand(game, i)) {
             continue;
         }
@@ -387,7 +389,7 @@ int determineWinner(const GameState *game)
             continue;
         }
 
-        Card handCards[2] = { player->hole_cards[0], player->hole_cards[1] };
+        Card handCards[2] = { player->playerCards[0], player->playerCards[1] };
         Card boardCards[MAX_DEALER_CARDS];
         for (int card = 0; card < MAX_DEALER_CARDS; card++) {
             boardCards[card] = game->board.cards[card];
@@ -412,6 +414,6 @@ void awardPotToWinner(GameState *game, int winnerIndex)
         return;
     }
 
-    game->players[winnerIndex].chips += game->pot;
+    game->players[winnerIndex]->chips += game->pot;
     game->pot = 0;
 }

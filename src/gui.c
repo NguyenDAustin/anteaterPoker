@@ -468,7 +468,7 @@ static void copyGameStateToGui(Poker_Gui *pokerGui, const GameState *game)
 
     for (int i = 0; i < MAX_PLAYERS; i++) {
         Player_Info *guiPlayer = pokerGui->playerInfo[i];
-        const Player_Info *statePlayer = &game->players[i];
+        const Player_Info *statePlayer = game->players[i];
 
         if (!guiPlayer) {
             continue;
@@ -480,9 +480,9 @@ static void copyGameStateToGui(Poker_Gui *pokerGui, const GameState *game)
         guiPlayer->currentBet = statePlayer->currentBet;
         guiPlayer->hasFolded = statePlayer->hasFolded;
         guiPlayer->isActive = statePlayer->isActive;
-        guiPlayer->hole_cards[0] = statePlayer->hole_cards[0];
-        guiPlayer->hole_cards[1] = statePlayer->hole_cards[1];
-        guiPlayer->playerCards = guiPlayer->hole_cards;
+        guiPlayer->playerCards[0] = statePlayer->playerCards[0];
+        guiPlayer->playerCards[1] = statePlayer->playerCards[1];
+        guiPlayer->playerCards = guiPlayer->playerCards;
     }
 }
 
@@ -539,14 +539,16 @@ static void sendPlayerName(Poker_Gui *pokerGui)
     g_free(playerName);
 }
 
+/*
 void allocatePlayerInfos(Player_Info **playerInfo)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
         playerInfo[i] = g_malloc0(sizeof(Player_Info));
-        playerInfo[i]->playerCards = playerInfo[i]->hole_cards;
+        playerInfo[i]->playerCards = playerInfo[i]->playerCards;
     }
 }
+    */
 
 void onFoldClicked(GtkWidget *button, gpointer user_data)
 {
@@ -684,8 +686,12 @@ void create_poker_gui(GtkApplication *app, gpointer user_data)
     loadFont(PIXEL_FONT_RESOURCE2);
 
     // allocating player info
-    pokerGui->playerInfo = g_malloc(sizeof(Player_Info *) * MAX_PLAYERS);
-    allocatePlayerInfos(pokerGui->playerInfo);
+    pokerGui->playerInfo = malloc(sizeof(Player_Info *) * MAX_PLAYERS);
+    Player_Info** playerInfo = getAllPlayersInfo(pokerGui); 
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        playerInfo[i] = malloc(sizeof(Player_Info));
+    }
 
     // default initializing playerInfos --> for active player -->
 

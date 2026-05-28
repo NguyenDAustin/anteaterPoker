@@ -9,6 +9,13 @@
 #include <netdb.h> 
 
 #include "gui.h"
+#include "communication.h"
+
+
+typedef struct {
+    int socket; 
+    const char* stateMsg; 
+} Communication_Bundle; 
 
 void error(const char *msg)
 {
@@ -50,11 +57,24 @@ int main(int argc, char *argv[])
     serv_addr.sin_port = htons(portno);
 
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
-        error("ERROR connecting");
+        error("ERROR connecting"); 
+
 
     //GUI stuff 
     GtkApplication *app;
     int status;
+
+
+    /*receving message 
+    ssize_t bytes; 
+    bytes = receiveMessage(sockfd, buffer, sizeof(buffer)); 
+
+    if(bytes <= 0)  
+        printf("ERROR: no gui state update was received\n"); 
+    
+    Communication_Bundle commBundle;  
+    */
+    
 
     app = gtk_application_new("com.anteater.poker", G_APPLICATION_FLAGS_NONE);
 

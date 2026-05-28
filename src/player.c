@@ -2,9 +2,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "enums.h"
 #include "player.h"
-#include "state.h"
 
 void initPlayer(Player_Info *player, const char *name, int seat, int chips, PlayerType type)
 {
@@ -27,15 +25,22 @@ void initPlayer(Player_Info *player, const char *name, int seat, int chips, Play
     player->betSize = 0;
     player->currentBet = 0;
     player->type = type;
-    player->isActive = true;
+    player->isActive = true; //is this not the same thing as hasFolded ?
     player->hasFolded = false;
     player->avatarImg = NULL;
 
-    player->playerCards = player->hand;
-    player->hand[0] = empty_card();
+    //player->playerCards = player->hand; - ok remove for now b/c 
+
+    /*
+    player->hand[0] = empty_card(); //changed this --> empty cards are denoted by NULL - queency
     player->hand[1] = empty_card();
-    player->hole_cards[0] = empty_card();
-    player->hole_cards[1] = empty_card();
+    player->playerCards[0] = empty_card();
+    player->playerCards[1] = empty_card();
+    */
+
+    player->playerCards = NULL; 
+    
+   
 }
 
 void resetPlayer(Player_Info *player)
@@ -46,11 +51,16 @@ void resetPlayer(Player_Info *player)
         return;
     }
 
-    player->playerCards = player->hand;
+    //player->playerCards = player->hand;
+
+    /*
     player->hand[0] = empty_card();
     player->hand[1] = empty_card();
-    player->hole_cards[0] = empty_card();
-    player->hole_cards[1] = empty_card();
+    player->playerCards[0] = empty_card();
+    player->playerCards[1] = empty_card();
+    */ 
+
+    player->playerCards = NULL; //reset this way
     player->betSize = 0;
     player->currentBet = 0;
     player->isActive = true;
@@ -251,11 +261,17 @@ void dealHoleCards(Player_Info *player, Card card1, Card card2)
         return;
     }
 
-    player->playerCards = player->hand;
+    //player->playerCards = player->hand;
+
+    player->playerCards[0] = card1; 
+    player->playerCards[1] = card2;
+
+    /*
     player->hand[0] = card1;
     player->hand[1] = card2;
-    player->hole_cards[0] = card1;
-    player->hole_cards[1] = card2;
+    player->playerCards[0] = card1;
+    player->playerCards[1] = card2;
+    */
 }
 
 void resetBetSize(Player_Info *player)

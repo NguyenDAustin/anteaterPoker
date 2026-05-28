@@ -42,7 +42,6 @@ bool portNoProvided(int args){ // checks if the number of command line arguments
     return (args >= 2); 
 }
 
-
 int writeToClient(int* clientSockets, int joinedPlayers, int playerNumber, const char* message){
     if (playerNumber < 1 || playerNumber > joinedPlayers) {
         printf("ERROR: invalid player number %d (joined players: %d)\n", playerNumber, joinedPlayers);
@@ -98,10 +97,10 @@ void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers, Game
         }
 
         int playerNumber = assignPlayerNumber(*joinedPlayers);
-        char defaultName[sizeof(game->players[0].name)];
+        char defaultName[sizeof(game->players[0]->name)];
 
         snprintf(defaultName, sizeof(defaultName), "Player%d", playerNumber);
-        initPlayer(&game->players[*joinedPlayers], defaultName, *joinedPlayers, STARTING_CHIPS, HUMAN_PLAYER);
+        initPlayer(game->players[*joinedPlayers], defaultName, *joinedPlayers, STARTING_CHIPS, HUMAN_PLAYER);
         game->numPlayers = *joinedPlayers + 1;
 
         printf("client has been accepted as player %d\n", playerNumber); 
@@ -134,9 +133,11 @@ void readMessage(int* clientSockets, int joinedPlayers, int playerIndex, GameSta
     }
 
     if (parsePlayerNameMessage(buffer, playerName, sizeof(playerName))) {
-        strncpy(game->players[playerIndex].name, playerName, sizeof(game->players[playerIndex].name) - 1);
-        game->players[playerIndex].name[sizeof(game->players[playerIndex].name) - 1] = '\0';
-        printf("Player %d name set to %s\n", playerIndex + 1, game->players[playerIndex].name);
+
+        strncpy(game->players[playerIndex]->name, playerName, sizeof(game->players[playerIndex]->name) - 1);
+        game->players[playerIndex]->name[sizeof(game->players[playerIndex]->name) - 1] = '\0';
+        printf("Player %d name set to %s\n", playerIndex + 1, game->players[playerIndex]->name); 
+
         if (formatFullGameState(stateMessage, sizeof(stateMessage), game)) {
             n = broadcastToAll(clientSockets, joinedPlayers, stateMessage);
         } else {
@@ -160,9 +161,12 @@ void lobby(int serverSocket, int* clientSockets){
     int joinedPlayers = 0; 
     int max_fd = serverSocket; 
     int newClientSocket; 
-    GameState game;
 
-    initGameState(&game);
+    printf("trying to create lobby\n");
+
+
+    GameState* game = malloc(sizeof(GameState)); 
+    initGameState(game);
 
     printf("LOBBY CREATED - MULTI CONNECTION VERSION\n");
 
@@ -186,12 +190,12 @@ void lobby(int serverSocket, int* clientSockets){
 
         //accept new clients 
         if(FD_ISSET(serverSocket, &socketList))
-            acceptClient(clientSockets, serverSocket, &joinedPlayers, &game); 
+            acceptClient(clientSockets, serverSocket, &joinedPlayers, game); 
 
         //reading current messages
         for (int i = 0; i < joinedPlayers; i++) {
             if (FD_ISSET(clientSockets[i], &socketList))
-                readMessage(clientSockets, joinedPlayers, i, &game);
+                readMessage(clientSockets, joinedPlayers, i, game);
         }
     }
 }

@@ -23,11 +23,14 @@ typedef struct {
 } Board;
 
 typedef struct GameState {
-	Player_Info players[MAX_PLAYERS_COUNT];
+	//Player_Info players[MAX_PLAYERS_COUNT]; 
+    Player_Info** players; //changing to double pointer
+
 	int numPlayers;
     int dealerIndex;
-    Deck deck;
-    Board board;
+    Deck* deck; //change to pointer - queency
+    Board board; //what the hell is board ?
+
     int pot;
     int currentPlayerIndex;
     int turnNumber;

@@ -19,7 +19,7 @@ static bool isGamePlayerActive(const GameState *game, int playerIndex)
         return false;
     }
 
-    const Player_Info *player = &game->players[playerIndex];
+    const Player_Info *player = game->players[playerIndex];
     return player->isActive && !player->hasFolded;
 }
 
@@ -144,7 +144,7 @@ Card getPlayerHoleCard(const GameState *game, int playerIndex, int cardSlot)
         return empty_card();
     }
 
-    return game->players[playerIndex].hole_cards[cardSlot];
+    return game->players[playerIndex]->playerCards[cardSlot];
 }
 
 // Set a player's hole card
@@ -154,7 +154,7 @@ bool setPlayerHoleCard(GameState *game, int playerIndex, int cardSlot, Card card
         return false;
     }
 
-    game->players[playerIndex].hole_cards[cardSlot] = card;
+    game->players[playerIndex]->playerCards[cardSlot] = card;
     return true;
 }
 
@@ -183,16 +183,33 @@ bool setDealerCard(GameState *game, int dealerCardIndex, Card card)
     return true;
 }
 
+//to properly allocate player info 
+void allocatePlayerInfos(Player_Info **playerInfo)
+{
+    for (int i = 0; i < MAX_PLAYERS; i++)
+    {
+        playerInfo[i] = malloc(sizeof(Player_Info));
+    }
+}
+
 // Initialize the game state
 void initGameState(GameState *game)
 {
+    printf("initializing game state!\n"); 
     if (!game) {
         return;
     }
 
-    memset(game, 0, sizeof(GameState));
-    init_deck(&game->deck);
-    shuffle(&game->deck);
+    game->deck = malloc(sizeof(Deck)); //alloc memory
+    game->players = malloc(sizeof(Player_Info) * MAX_PLAYERS); 
+    allocatePlayerInfos(game->players); 
+
+    //memset(game, 0, sizeof(GameState)); --> ok i allocate memory outside of function (in lobby) - queency
+
+    printf("trying to create deck/shuffle\n"); 
+    init_deck(game->deck);
+    shuffle(game->deck);
+    printf("created deck/shuffle\n"); 
 
     game->numPlayers = 0;
     game->dealerIndex = 0;
@@ -204,36 +221,49 @@ void initGameState(GameState *game)
     game->currentBet = 0;
     game->round = ROUND_PRE_FLOP;
     game->board.count = 0;
+
+    printf("finished initializing basic game state stuff\n"); 
+
     for (int i = 0; i < MAX_DEALER_CARDS; i++) {
         game->board.cards[i] = empty_card();
     }
 
+    printf("finished initializing board\n"); 
+
     for (int i = 0; i < MAX_PLAYERS_COUNT; i++) {
-        game->players[i].seat = i;
-        game->players[i].chips = 0;
-        game->players[i].betSize = 0;
-        game->players[i].currentBet = 0;
-        game->players[i].hasFolded = false;
-        game->players[i].isActive = false;
-        game->players[i].hole_cards[0] = empty_card(); 
-        game->players[i].hole_cards[1] = empty_card();
+        game->players[i]->seat = i;
+        game->players[i]->chips = 0;
+        game->players[i]->betSize = 0;
+        game->players[i]->currentBet = 0;
+        game->players[i]->hasFolded = false;
+        game->players[i]->isActive = false;
+        game->players[i]->playerCards = NULL; 
+
+        /*
+        game->players[i]->playerCards[0] = empty_card(); 
+        game->players[i]->playerCards[1] = empty_card();
+        */
     }
+
+     printf("finished initializing game state!\n"); 
 }
 
 // Reset the game state for a new round
 void resetGameState(GameState *game)
-{
+{ 
+
     if (!game) {
         return;
     }
 
+
     for (int i = 0; i < game->numPlayers; i++) {
-        Player_Info *player = &game->players[i];
+        Player_Info *player = game->players[i];
         player->isActive = true;
         player->currentBet = 0;
         player->betSize = 0;
-        player->hole_cards[0] = empty_card();
-        player->hole_cards[1] = empty_card();
+        player->playerCards[0] = empty_card();
+        player->playerCards[1] = empty_card();
     }
 
     game->board.count = 0;
@@ -245,8 +275,8 @@ void resetGameState(GameState *game)
     game->currentBet = 0;
     game->round = ROUND_PRE_FLOP;
     game->turnNumber = 0;
-    init_deck(&game->deck);
-    shuffle(&game->deck);
+    init_deck(game->deck);
+    shuffle(game->deck);
     game->currentPlayerIndex = nextActivePlayerIndex(game);
     if (game->currentPlayerIndex < 0) {
         game->currentPlayerIndex = 0;

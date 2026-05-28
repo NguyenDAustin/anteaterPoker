@@ -1,7 +1,10 @@
 #ifndef ENUM_H 
 #define ENUM_H
 
+
+//ALL TYPEDEFS GO HERE
 typedef struct _cairo_surface Icon;
+typedef struct Player_Info Player;
 
 enum {
     WINDOW_HEIGHT = 800, 

@@ -166,15 +166,15 @@ bool formatFullGameState(char* buffer, size_t bufferSize, const GameState* gameS
     }
 
     for (int i = 0; i < gameState->numPlayers; i++) {
-        const Player_Info* p = &gameState->players[i];
+        const Player_Info* p = gameState->players[i];
         written = snprintf(buffer + offset, bufferSize - offset,
                            " | Player %d Name = %s | Player %d Chips = %d | Player %d Folded = %d | Player %d Cards = %d:%d,%d:%d",
                            i + 1, p->name,
                            i + 1, p->chips,
                            i + 1, p->hasFolded ? 1 : 0,
                            i + 1,
-                           p->hole_cards[0].rank, (int)p->hole_cards[0].suit,
-                           p->hole_cards[1].rank, (int)p->hole_cards[1].suit);
+                           p->playerCards[0].rank, (int)p->playerCards[0].suit,
+                           p->playerCards[1].rank, (int)p->playerCards[1].suit);
         if (written < 0 || (size_t)written >= bufferSize - offset) return false;
         offset += written;
     }
@@ -247,7 +247,7 @@ void applyPlayerChips(const char* message, GameState* gameState, int playerNum)
     char fmt[32];
     snprintf(fmt, sizeof(fmt), "Player %d Chips = %%d", playerNum);
     if (sscanf(p, fmt, &value) == 1) {
-        gameState->players[playerNum - 1].chips = value;
+        gameState->players[playerNum - 1]->chips = value;
     }
 }
 
@@ -264,7 +264,7 @@ void applyPlayerFolded(const char* message, GameState* gameState, int playerNum)
     char fmt[32];
     snprintf(fmt, sizeof(fmt), "Player %d Folded = %%d", playerNum);
     if (sscanf(p, fmt, &value) == 1) {
-        gameState->players[playerNum - 1].hasFolded = (value != 0);
+        gameState->players[playerNum - 1]->hasFolded = (value != 0);
     }
 }
 
@@ -280,13 +280,13 @@ void applyPlayerCards(const char* message, GameState* gameState, int playerNum)
 
     int r1, s1, r2, s2;
     if (sscanf(p, "%d:%d,%d:%d", &r1, &s1, &r2, &s2) == 4) {
-        Player_Info* player = &gameState->players[playerNum - 1];
-        player->hole_cards[0].rank = r1;
-        player->hole_cards[0].suit = (Suit)s1;
-        player->hole_cards[0].type = cardTypeForSuit(s1);
-        player->hole_cards[1].rank = r2;
-        player->hole_cards[1].suit = (Suit)s2;
-        player->hole_cards[1].type = cardTypeForSuit(s2);
+        Player_Info* player = gameState->players[playerNum - 1];
+        player->playerCards[0].rank = r1;
+        player->playerCards[0].suit = (Suit)s1;
+        player->playerCards[0].type = cardTypeForSuit(s1);
+        player->playerCards[1].rank = r2;
+        player->playerCards[1].suit = (Suit)s2;
+        player->playerCards[1].type = cardTypeForSuit(s2);
     }
 }
 
@@ -305,12 +305,12 @@ void applyPlayerName(const char* message, GameState* gameState, int playerNum)
         length--;
     }
 
-    if (length >= sizeof(gameState->players[playerNum - 1].name)) {
-        length = sizeof(gameState->players[playerNum - 1].name) - 1;
+    if (length >= sizeof(gameState->players[playerNum - 1]->name)) {
+        length = sizeof(gameState->players[playerNum - 1]->name) - 1;
     }
 
-    memcpy(gameState->players[playerNum - 1].name, p, length);
-    gameState->players[playerNum - 1].name[length] = '\0';
+    memcpy(gameState->players[playerNum - 1]->name, p, length);
+    gameState->players[playerNum - 1]->name[length] = '\0';
 }
 
 void parseFullGameState(const char* message, GameState* gameState)

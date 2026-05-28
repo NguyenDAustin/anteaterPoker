@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "enums.h"
 #include "state.h"
 #include "player.h"
 #include "hand.h"

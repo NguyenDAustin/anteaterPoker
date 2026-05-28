@@ -61,13 +61,13 @@ bool formatGameStateMessage(char* buffer, size_t bufferSize, const GameState* ga
     if (offset < 0) return false;
 
     for (int i = 0; i < game->numPlayers; i++) {
-        const PlayerState* p = &game->players[i];
+        const Player_Info* p = game->players[i]; //change player state to player_info - queency
         offset = appendFormatted(buffer, bufferSize, offset,
                                  "player %d %s %d %d %d %d %d %d %d %d\n",
                                  i, p->name, p->chips, p->currentBet,
                                  p->hasFolded ? 1 : 0, p->isActive ? 1 : 0,
-                                 p->hole_cards[0].rank, (int)p->hole_cards[0].suit,
-                                 p->hole_cards[1].rank, (int)p->hole_cards[1].suit);
+                                 p->playerCards[0].rank, (int)p->playerCards[0].suit,
+                                 p->playerCards[1].rank, (int)p->playerCards[1].suit);
         if (offset < 0) return false;
     }
 
@@ -84,6 +84,7 @@ static void writeCard(Card* card, int rank, int suit)
 
 bool parseGameStateMessage(const char* message, GameState* game)
 {
+
     if (!message || !game) {
         return false;
     }
@@ -132,7 +133,7 @@ bool parseGameStateMessage(const char* message, GameState* game)
             int rank, suit, consumed;
             while (idx < MAX_DEALER_CARDS &&
                    sscanf(cursor, " %d %d%n", &rank, &suit, &consumed) == 2) {
-                writeCard(&game->board.cards[idx], rank, suit);
+                writeCard(game->board.cards[idx], rank, suit);
                 idx++;
                 cursor += consumed;
             }
@@ -145,15 +146,15 @@ bool parseGameStateMessage(const char* message, GameState* game)
                                  &hasFolded, &isActive,
                                  &r1, &s1, &r2, &s2);
             if (matched == 10 && idx >= 0 && idx < MAX_PLAYERS_COUNT) {
-                PlayerState* p = &game->players[idx];
+                Player_Info* p = game->players[idx]; //changed player state to Player_Info
                 strncpy(p->name, name, sizeof(p->name) - 1);
                 p->name[sizeof(p->name) - 1] = '\0';
                 p->chips = chips;
                 p->currentBet = currentBet;
                 p->hasFolded = hasFolded != 0;
                 p->isActive = isActive != 0;
-                writeCard(&p->hole_cards[0], r1, s1);
-                writeCard(&p->hole_cards[1], r2, s2);
+                writeCard(&p->playerCards[0], r1, s1);
+                writeCard(&p->playerCards[1], r2, s2);
             }
         }
     }
