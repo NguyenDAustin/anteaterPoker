@@ -69,6 +69,56 @@ void advanceToNextRound(GameState *game)
     }
 }
 
+
+Player_Info** getPlayersInfo(const GameState* game){ 
+     if(!game){
+        printf("ERROR: could not get all players info b/c game is NULL\n"); 
+        return NULL; 
+    }
+    return game->players; 
+}
+
+Player_Info* getPlayerInfo(const GameState* game, int playerIndex){ 
+     if(!game){
+        printf("ERROR: could not get  %d players info b/c game is NULL\n", playerIndex); 
+        return NULL; 
+    }
+    return game->players[playerIndex]; 
+}
+
+int getJoinedPlayers(const GameState* game){
+    if(!game){
+        printf("ERROR: could not get number of joined players b/c game is NULL\n"); 
+        return -1; 
+    }
+    return game->numPlayers; 
+}
+
+void setPlayersInfo(GameState* game, Player_Info** playersInfo){
+    if(!game){
+        printf("ERROR: could not set all players info b/c game is NULL\n"); 
+        return;
+    }
+    game->players = playersInfo; 
+}
+
+void setPlayerInfo(GameState* game, Player_Info* playerInfo, int playerIndex){ 
+    if(!game){
+        printf("ERROR: could not set %d players info b/c game is NULL\n", playerIndex); 
+        return;
+    }
+    game->players[playerIndex] = playerInfo; 
+}
+
+void setJoinedPlayers(GameState* game, int joinedPlayers){ 
+    if(!game){ 
+        printf("ERROR: could not set number of joined players b /c game is NULL\n"); 
+        return; 
+    }
+
+    game->numPlayers = joinedPlayers; 
+}
+
 //get player whose turn it is
 int getCurrentPlayerIndex(const GameState *game)
 {
@@ -138,7 +188,7 @@ void setRound(GameState *game, Round round)
 }
 
 // Get a player's hole card
-Card getPlayerHoleCard(const GameState *game, int playerIndex, int cardSlot)
+Card getPlayerCard(const GameState *game, int playerIndex, int cardSlot)
 {
     if (!game || playerIndex < 0 || playerIndex >= game->numPlayers || cardSlot < 0 || cardSlot >= 2) {
         return empty_card();
@@ -147,15 +197,34 @@ Card getPlayerHoleCard(const GameState *game, int playerIndex, int cardSlot)
     return game->players[playerIndex]->playerCards[cardSlot];
 }
 
+Card* getPlayerCards(const GameState* game, int playerIndex){ 
+    if(!game || playerIndex < 0 || playerIndex >= game->numPlayers){ 
+        printf("ERROR: could not get player %d cards b/c game is null or invalid index\n", playerIndex); 
+        return NULL; 
+    }
+    return game->players[playerIndex]->playerCards; 
+}
+
 // Set a player's hole card
-bool setPlayerHoleCard(GameState *game, int playerIndex, int cardSlot, Card card)
+bool setPlayerCard(GameState *game, int playerIndex, int cardSlot, Card card)
 {
     if (!game || playerIndex < 0 || playerIndex >= game->numPlayers || cardSlot < 0 || cardSlot >= 2) {
+        printf("ERROR: could not set player card b/c index is invalid or gamestate is NULL\n"); 
         return false;
     }
 
     game->players[playerIndex]->playerCards[cardSlot] = card;
     return true;
+}
+
+void setPlayerCards(GameState* game, int playerIndex, Card* playerCards){
+    Player_Info* player = getPlayerInfo(game, playerIndex); 
+
+    if(!game || !player){
+        printf("ERROR: could not get %d player cards b/c player or game is NULL\n", playerIndex); 
+        return; 
+    }
+    setCards(player, playerCards); 
 }
 
 // Get a dealer card
@@ -172,6 +241,7 @@ Card getDealerCard(const GameState *game, int dealerCardIndex)
 bool setDealerCard(GameState *game, int dealerCardIndex, Card card)
 {
     if (!game || dealerCardIndex < 0 || dealerCardIndex >= MAX_DEALER_CARDS) {
+        printf("ERROR could not set dealer card b/c invalid index or game is NULL\n");
         return false;
     }
 
@@ -181,6 +251,68 @@ bool setDealerCard(GameState *game, int dealerCardIndex, Card card)
     }
 
     return true;
+}
+
+Card* getDealerCards(const GameState* game){  
+    if(!game){
+        printf("ERROR could not get dealer cards b/c gamestate is NULL\n"); 
+        return NULL; 
+    }
+    return game->board.cards; 
+}
+
+
+bool setDealerCards(GameState* game, Card* dealerCards){ 
+    if(!game){ 
+        printf("ERROR could not set dealer cards b/c gamestate is NULL\n");
+        return false; 
+    }
+
+    for(int i = 0; i < MAX_DEALER_CARDS; i++){ 
+        setDealerCard(game, i, dealerCards[i]); 
+    }
+    return true; 
+}
+
+void setPlayerChipCount(GameState* game, int playerIndex, int chipCount){ 
+    if(!game){ 
+        printf("ERROR could not set %d player chip count b/c gamestate is NULL\n", playerIndex);
+        return; 
+    }
+    Player_Info* player = getPlayerInfo(game, playerIndex); 
+
+    if(!player){ 
+        printf("ERROR could not set %d player chip count b/c player is NULL\n", playerIndex);
+        return; 
+    }
+
+    setChipCount(player, chipCount); 
+}
+
+void setPot(GameState* game, int potAmt){
+    if(!game){ 
+        printf("ERROR could not set pot b/c gamestate is NULL\n");
+        return; 
+    }
+    game->pot = potAmt; 
+}
+
+int getPlayerChipCount(const GameState* game, int playerIndex){ 
+    if(!game){ 
+        printf("ERROR could not get chip count b/c gamestate is NULL\n");
+        return -1; 
+    }
+
+    Player_Info* player = getPlayerInfo(game, playerIndex); 
+    return getChipCount(player); 
+}
+
+int getPot(const GameState* game){
+    if(!game){ 
+        printf("ERROR could not get pot b/c gamestate is NULL\n");
+        return -1; 
+    }
+    return game->pot; 
 }
 
 //to properly allocate player info 

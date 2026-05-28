@@ -6,12 +6,14 @@
 #include "player.h"
 #include "render.h"
 #include "enums.h"
+#include "state.h"
 
 extern const char *TITLE;
 extern const char *CSS;
 extern const char *POKER_TABLE;
 extern const int BUTTON_HEIGHT;
 extern const int BUTTON_WIDTH;
+
 
 typedef struct Poker_Gui
 {
@@ -24,21 +26,14 @@ typedef struct Poker_Gui
     // image resources
     Icon **images;
     Icon **avatarImages;
-    Icon *chipIcon;
+    Icon *chipIcon; 
 
-    // Player Infos
-    Player_Info **playerInfo; // contains the info of all players --> put NULL if not active player for player cards
-                              //--> Naveen I think you will need to communicate this to me
+    //Game State 
+    GameState* gameState; 
 
     int socket;
-
-    // stuff other people need to communicate to me i
-    int activePlayer;  // Naveen this is you -> client socket -> player number
-    int turn;          // Mia this is you -> game state
-    int pot;           // whoever is in charge of calculating pot amount --> I think it might be you Mia
-    Card *dealerCards; // Austin this is you --> give me all 5 cards at once
-
 } Poker_Gui;
+
 
 // GETTER FUNCTIONS FOR GUI
 GtkWidget *getWindow(const Poker_Gui *pokerGui);
@@ -47,17 +42,7 @@ GtkWidget *getRaiseSlider(const Poker_Gui *pokerGui);
 Icon **getImages(const Poker_Gui *pokerGui);
 Icon **getAvatarImages(const Poker_Gui *pokerGui);
 Icon *getChipIcon(const Poker_Gui *pokerGui);
-
-// GETTER FUNCTIONS FOR PLAYER INFO- GIVEN A PLAYER NUM
-Player_Info **getAllPlayersInfo(const Poker_Gui *pokerGui);
-Player_Info *getPlayerInfo(const Poker_Gui *pokerGui, int playerNum);
-const char *getPlayerName(const Player_Info **playerInfo, int playerNum);
-int getPlayerChipCount(const Player_Info **playerInfo, int playerNum);
-Icon *getPlayerAvatar(const Player_Info **playerInfo, int playerNum);
-Card *getPlayerCards(const Player_Info **playerInfo, int playerNum);
-
-// GETTER FUNCTIONS FOR GAME STATE STUFF
-int getPot(const Poker_Gui *pokerGui);
+GameState* getGameState(const Poker_Gui* pokerGui);
 int getSocket(const Poker_Gui *pokerGui);
 
 // SETTER FUNCTIONS FOR GUI
@@ -67,16 +52,7 @@ void setRaiseSlider(Poker_Gui *pokerGui, GtkWidget *raiseSlider);
 void setImages(Poker_Gui *pokerGui, Icon **cardImages);
 void setAvatarImages(Poker_Gui *pokerGui, Icon **avatarImages);
 void setChipIcon(Poker_Gui *pokerGui, Icon *chipIcon);
-
-// SETTER FUNCTIONS FOR PLAYER INFO - GIVEN PLAYER NUM
-void setPlayerInfo(Poker_Gui *pokerGui, Player_Info *playerInfo, int playerNum);
-void setPlayerName(Player_Info **playerInfo, const char *playerName, int playerNum);
-void setChipCount(Player_Info **playerInfo, int chipCount, int playerNum);
-void setAvatar(Player_Info **playerInfo, Icon *avatarImg, int playerNum);
-void setPlayerCards(Player_Info **playerInfo, Card *playerCards, int playerNum);
-
-// SETTER FUNCTIONS FOR GAME STATE
-void setPot(Poker_Gui *pokerGui, int potAmt);
+void setGameState(Poker_Gui* pokerGui, GameState* gameState);
 
 // HELPER FUNCTIONS
 void loadCss(GtkWidget *window, const char *CSS); // loads a given CSS code into GTK so child widgets can use

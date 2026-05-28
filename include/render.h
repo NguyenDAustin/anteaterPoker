@@ -6,6 +6,7 @@
 #include "enums.h"
 #include "deck.h"
 #include "playerbox_render.h"
+#include "state.h"
 
 #define MAX_CARDS 56
 

@@ -120,6 +120,7 @@ static void postBlind(GameState *game, int playerIndex, int amount)
     }
 }
 
+/* Ok i just removed this - queency 
 static void setPlayerCards(Player_Info *player, Card first, Card second)
 {
     player->playerCards[0] = first;
@@ -128,8 +129,8 @@ static void setPlayerCards(Player_Info *player, Card first, Card second)
     player->hand[0] = first;
     player->hand[1] = second;
     player->playerCards = player->hand;
-    */
 }
+*/
 
 static void dealHoleCardsToActivePlayers(GameState *game)
 {
@@ -168,7 +169,8 @@ void startNewRound(GameState *game)
         Player_Info *player = game->players[i];
         player->hasFolded = false;
         player->isActive = player->chips > 0;
-        setPlayerCards(player, empty_card(), empty_card());
+        player->playerCards = NULL; 
+        //setPlayerCards(player, empty_card(), empty_card());
     }
 
     if (countPlayersInHand(game) < 2) {

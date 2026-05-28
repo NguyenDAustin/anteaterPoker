@@ -242,6 +242,15 @@ void setAvatar(Player_Info *player, Icon *avatarImg)
     player->avatarImg = avatarImg;
 }
 
+void setCards(Player_Info* player, Card* playerCards){
+    if (!player)
+    {
+        printf("ERROR: player is NULL cannot set cards\n");
+        return;
+    }
+    player->playerCards = playerCards; 
+}
+
 void foldPlayer(Player_Info *player)
 {
     if (!player)

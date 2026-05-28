@@ -561,6 +561,7 @@ void drawTurnHighlight(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, do
 
 void drawPot(cairo_t* cr, Poker_Gui* pokerGui){ 
     GtkWidget* pokerTable = getPokerTable(pokerGui);
+    GameState* gameState = getGameState(pokerGui);
     double tableH = getTableHeight(pokerTable); 
     double targetH = tableH * 0.08; 
     double targetW =  getTableWidth(pokerTable) * 0.15; 
@@ -576,7 +577,7 @@ void drawPot(cairo_t* cr, Poker_Gui* pokerGui){
 
     //drawing pot amount
     char pot[MAX_NUMBER_LENGTH];
-    moneyBuilder(pot, getPot(pokerGui));
+    moneyBuilder(pot, getPot(gameState));
     double potFontSize = targetH * 0.85; 
     textWidth = getTextWidth(cr, PIXEL_FONT, pot, potFontSize); 
     double potXPos = getCenter(getTableLeftEdge(pokerTable), getTableRightEdge(pokerTable)) - (textWidth/2.0); 
@@ -672,33 +673,41 @@ void intializePlayerSeats(GtkWidget* pokerTable, Seat_Info* seats){
 
 void updatePlayersInfo(Poker_Gui* pokerGui, int* chips, Card** playerCards){
     printf("updating players info\n");
-    Player_Info** playerInfo = getAllPlayersInfo(pokerGui); 
+    GameState* gameState = getGameState(pokerGui);
+    int joinedPlayers = getJoinedPlayers(gameState); 
 
-    for(int i = 0; i < MAX_PLAYERS; i++){ 
-        setChipCount(playerInfo, chips[i], i); 
-        setPlayerCards(playerInfo, playerCards[i], i);
+    for(int i = 0; i < joinedPlayers; i++){ 
+        setPlayerChipCount(gameState, i, chips[i]); 
+        setPlayerCards(gameState, i, playerCards[i]);
     }
 }
 
-gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){
+gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //in future game state will be read from user data!!
     printf("drawing poker table\n");
     Poker_Gui* pokerGui = (Poker_Gui*)user_data; 
     Icon** images = pokerGui->images;  
-    Icon* avatarImg = pokerGui->avatarImages[0]; 
+    GameState* gameState = getGameState(pokerGui); 
 
-    //temp solu for testing --> future dealer cards should be passed in from user_data //////////////////////////
+    //for testing purpose 
+    int joinedPlayers = MAX_PLAYERS; 
+    setJoinedPlayers(gameState, joinedPlayers); 
+
+
+    //for testing purpose -- see if I can properly read from game state or no
     Card card1 = cardCtor(SPADES, ACE); 
     Card card2 = cardCtor(HEARTS, TEN); 
     Card card3 = cardCtor(SPADES, TWO); 
     Card card4 = cardCtor(DIAMONDS, QUEEN); 
     Card card5 = cardCtor(CLUBS, FIVE); 
 
-    Card dealerCards[MAX_DEALER_CARDS] = {card1, card2, card3, card4, card5}; 
-    int cardsToDeal = MAX_DEALER_CARDS;  
+    int cardsToDeal = MAX_DEALER_CARDS; 
+    Card test[MAX_DEALER_CARDS] = {card1, card2, card3, card4, card5}; 
+    setDealerCards(gameState, test);
 
-    ////////////////////////////////////////////////////
+    Card* dealerCards = getDealerCards(gameState); 
 
-    //temp solu for testing --> future player cards should be passed in from user_data //////////////////////////
+
+    //for testing purpose -- see if I can properly read from game state or no
     card1 = cardCtor(CLUBS, THREE); 
     card2 = cardCtor(HEARTS, FOUR); 
     Card player1Cards[MAX_PLAYER_CARDS] = {card1, card2}; 
@@ -717,15 +726,12 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){
 
     card1 = cardCtor(DIAMONDS, KING); 
     card2 = cardCtor(HEARTS, FOUR); 
-    Card player6Cards[MAX_PLAYER_CARDS] = {card1, card2}; 
+    Card player6Cards[MAX_PLAYER_CARDS] = {card1, card2};
 
-    Card* playerCards[MAX_PLAYERS] = {player1Cards, player2Cards, player3Cards, player4Cards, player5Cards, player6Cards}; 
-   
-    //////////////////////////////////////////////////////
 
-    //temp solu for testing --> in future server should update my player's chip counts automatically
+    Card* playerCards[MAX_PLAYERS] = {player1Cards, player2Cards, player3Cards, player4Cards, player5Cards, player6Cards};
     int chips[MAX_PLAYERS] = {1000, 200, 1091, 4583, 8921, 102000}; 
-    updatePlayersInfo(pokerGui,chips, playerCards); 
+    updatePlayersInfo(pokerGui, chips, playerCards);
     printf("finished updating player info\n");
 
     ///zrrzy of card arrays --? depending on which player initialize that card array --> rest is auto NULL and thus won't be drawn
@@ -739,7 +745,8 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){
     pokerGui->pokerTable = widget; 
 
     //drawing pot
-    setPot(pokerGui, 152079531); 
+
+    setPot(gameState, 152079531); 
     drawPot(cr, pokerGui); 
     drawDealerCards(widget, cr, images, dealerCards, cardsToDeal); //cards to deal aka what turn
 

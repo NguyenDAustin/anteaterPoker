@@ -29,7 +29,7 @@ typedef struct GameState {
 	int numPlayers;
     int dealerIndex;
     Deck* deck; //change to pointer - queency
-    Board board; //what the hell is board ?
+    Board board; //what the hell is board ? --> apparently dealer cards
 
     int pot;
     int currentPlayerIndex;
@@ -43,18 +43,38 @@ typedef struct GameState {
 void initGameState(GameState *game);
 void resetGameState(GameState *game);
 void copyGameState(GameState *destination, const GameState *source);
+
+//GETTERS - GAME STATE
+Player_Info** getPlayersInfo(const GameState* game); //gets all player info 
+Player_Info* getPlayerInfo(const GameState* game, int playerIndex);  //gets a certain player's info
+int getJoinedPlayers(const GameState* game); 
 int getCurrentPlayerIndex(const GameState *game);
-bool setCurrentPlayerIndex(GameState *game, int playerIndex);
 int getDealerIndex(const GameState *game);
-bool setDealerIndex(GameState *game, int dealerIndex);
 int getTurnNumber(const GameState *game);
-void setTurnNumber(GameState *game, int turnNumber);
 Round getRound(const GameState *game);
-void setRound(GameState *game, Round round);
-Card getPlayerHoleCard(const GameState *game, int playerIndex, int cardSlot);
-bool setPlayerHoleCard(GameState *game, int playerIndex, int cardSlot, Card card);
+Card getPlayerCard(const GameState *game, int playerIndex, int cardSlot);
+Card* getPlayerCards(const GameState* game, int playerIndex); 
 Card getDealerCard(const GameState *game, int dealerCardIndex);
+Card* getDealerCards(const GameState* game);
+int getPlayerChipCount(const GameState* game, int playerIndex); 
+int getPot(const GameState* game); 
+
+//SETTERS - GAME STATE 
+void setPlayersInfo(GameState* game, Player_Info** playersInfo); //sets all players' info 
+void setPlayerInfo(GameState* game, Player_Info* playerInfo, int playerIndex); //sets one player's info
+void setJoinedPlayers(GameState* game, int joinedPlayers); 
+bool setCurrentPlayerIndex(GameState *game, int playerIndex);
+bool setDealerIndex(GameState *game, int dealerIndex);
+void setTurnNumber(GameState *game, int turnNumber);
+void setRound(GameState *game, Round round);
+bool setPlayerCard(GameState *game, int playerIndex, int cardSlot, Card card); 
+void setPlayerCards(GameState* game, int playerIndex, Card* playerCards);
 bool setDealerCard(GameState *game, int dealerCardIndex, Card card);
+bool setDealerCards(GameState* game, Card* dealerCards);
+void setPlayerChipCount(GameState* game, int playerIndex, int chipCount); 
+void setPot(GameState* game, int potAmt);
+
+//GENERAL FUNCTIONS
 void saveGameState(const GameState *game, const char *filename);
 void loadGameState(GameState *game, const char *filename);
 int nextActivePlayerIndex(const GameState *game);

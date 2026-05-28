@@ -52,6 +52,15 @@ int getChipCount(const Player_Info* playerInfo);
 Icon* getAvatar(const Player_Info* playerInfo); 
 Card* getCards(Player_Info* playerInfo); 
 
+//SETTER FUNCTIONS FOR PLAYER INFO - NO PLAYER NUM GIVEN
+void setName(Player_Info *player, const char *name);
+void setSeat(Player_Info *player, int seat);
+void setChipCount(Player_Info *player, int chipCount);
+void setBetSize(Player_Info *player, int betSize);
+void setPlayerType(Player_Info *player, PlayerType type);
+void setAvatar(Player_Info *player, Icon *avatarImg);
+void setCards(Player_Info* player, Card* playerCards);
+
 // start of program
 void initPlayer(Player_Info *player, const char *name, int seat, int chips, PlayerType type);
 

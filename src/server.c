@@ -139,10 +139,12 @@ void readMessage(int* clientSockets, int joinedPlayers, int playerIndex, GameSta
         printf("Player %d name set to %s\n", playerIndex + 1, game->players[playerIndex]->name); 
 
         if (formatFullGameState(stateMessage, sizeof(stateMessage), game)) {
+            printf("done reading msg\n");
             n = broadcastToAll(clientSockets, joinedPlayers, stateMessage);
         } else {
             n = sendMessage(clientSocket, "Name saved\n");
-        }
+        } 
+        printf("done reading msg\n");
     } else if (parsePokerActionMessage(buffer, &action)) {
         printf("Player action: %s amount=%d\n", pokerActionTypeToString(action.type), action.amount);
         n = sendMessage(clientSocket, "I got your poker action\n");

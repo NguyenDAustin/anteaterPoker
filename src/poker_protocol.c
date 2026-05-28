@@ -143,7 +143,7 @@ static Cardtype cardTypeForSuit(int suit)
 
 bool formatFullGameState(char* buffer, size_t bufferSize, const GameState* gameState)
 {
-    if (!buffer || bufferSize == 0 || !gameState) {
+    if (!buffer || bufferSize == 0 || !gameState) { //added player state NULL check
         return false;
     }
 
@@ -166,15 +166,15 @@ bool formatFullGameState(char* buffer, size_t bufferSize, const GameState* gameS
     }
 
     for (int i = 0; i < gameState->numPlayers; i++) {
-        const Player_Info* p = gameState->players[i];
-        written = snprintf(buffer + offset, bufferSize - offset,
-                           " | Player %d Name = %s | Player %d Chips = %d | Player %d Folded = %d | Player %d Cards = %d:%d,%d:%d",
+       // const Player_Info* p = gameState->players[i];
+        const Player_Info* p = getPlayerInfo(gameState, i); //changing to the getter and setter ver - queency
+        written = snprintf(buffer + offset, bufferSize - offset, " | Player %d Name = %s | Player %d Chips = %d | Player %d Folded = %d | Player %d Cards = %d:%d,%d:%d",
                            i + 1, p->name,
                            i + 1, p->chips,
                            i + 1, p->hasFolded ? 1 : 0,
                            i + 1,
                            p->playerCards[0].rank, (int)p->playerCards[0].suit,
-                           p->playerCards[1].rank, (int)p->playerCards[1].suit);
+                           p->playerCards[1].rank, (int)p->playerCards[1].suit); 
         if (written < 0 || (size_t)written >= bufferSize - offset) return false;
         offset += written;
     }

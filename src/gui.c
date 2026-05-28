@@ -116,77 +116,12 @@ Icon *getChipIcon(const Poker_Gui *pokerGui)
     return pokerGui->chipIcon;
 }
 
-Player_Info **getAllPlayersInfo(const Poker_Gui *pokerGui)
-{
-    if (!pokerGui)
-    {
-        printf("ERROR: cannot get all player info b/c pokerGui is NULL\n");
-        return NULL;
+GameState* getGameState(const Poker_Gui* pokerGui){
+    if(!pokerGui){ 
+        printf("ERROR: cannot get game state b/c pokerGui is NULL\n"); 
+        return NULL; 
     }
-    return pokerGui->playerInfo;
-}
-
-Player_Info *getPlayerInfo(const Poker_Gui *pokerGui, int playerNum)
-{
-    if (!pokerGui || !(pokerGui->playerInfo))
-    {
-        printf("ERROR: cannot get player info b/c pokerGui or player info is NULL\n");
-        return NULL;
-    }
-    return pokerGui->playerInfo[playerNum];
-}
-
-const char *getPlayerName(const Player_Info **playerInfo, int playerNum)
-{
-    if (!playerInfo || !(playerInfo[playerNum]) || !(playerInfo[playerNum]->name))
-    {
-        printf("ERROR: cannot get player name b/c player info or player # %d or player name is NULL\n", playerNum);
-        return NULL;
-    }
-
-    return playerInfo[playerNum]->name;
-}
-
-int getPlayerChipCount(const Player_Info **playerInfo, int playerNum)
-{
-    if (!playerInfo)
-    {
-        printf("ERROR: player info is NULL\n");
-        return -1;
-    }
-    return playerInfo[playerNum]->chips;
-}
-
-Icon *getPlayerAvatar(const Player_Info **playerInfo, int playerNum)
-{
-    if (!playerInfo || !(playerInfo[playerNum]) || !(playerInfo[playerNum]->avatarImg))
-    {
-        printf("ERROR: player info or player # %d or player avatar is NULL\n", playerNum);
-        return NULL;
-    }
-    return playerInfo[playerNum]->avatarImg;
-}
-
-Card *getPlayerCards(const Player_Info **playerInfo, int playerNum)
-{
-    if (!playerInfo || !(playerInfo[playerNum]) || !(playerInfo[playerNum]->playerCards))
-    {
-        printf("ERROR: player info or player # %d or player cards is NULL\n", playerNum);
-        return NULL;
-    }
-    return playerInfo[playerNum]->playerCards;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
-int getPot(const Poker_Gui *pokerGui)
-{
-    if (!pokerGui)
-    {
-        printf("ERROR: pokerGui is NULL cannot get pot\n");
-        return -1;
-    }
-    return pokerGui->pot;
+    return pokerGui->gameState; 
 }
 
 int getSocket(const Poker_Gui *pokerGui)
@@ -261,68 +196,14 @@ void setChipIcon(Poker_Gui *pokerGui, Icon *chipIcon)
     pokerGui->chipIcon = chipIcon;
 }
 
-void setPlayerInfo(Poker_Gui *pokerGui, Player_Info *playerInfo, int playerNum)
-{
-    if (!pokerGui)
-    {
-        printf("ERROR: poker gui is NULL cannot set player info\n");
+void setGameState(Poker_Gui* pokerGui, GameState* gameState){
+    if(!pokerGui){
+        printf("ERROR: poker gui is NULL cannot set game  state\n");
         return;
     }
-    pokerGui->playerInfo[playerNum] = playerInfo;
+    pokerGui->gameState = gameState; 
 }
 
-void setPlayerName(Player_Info **playerInfo, const char *playerName, int playerNum)
-{
-    if (!playerInfo || !playerInfo[playerNum])
-    {
-        printf("ERROR: player info or player #%d is NULL cannot set player name\n", playerNum);
-        return;
-    }
-    strncpy(playerInfo[playerNum]->name, playerName, sizeof(playerInfo[playerNum]->name) - 1);
-    playerInfo[playerNum]->name[sizeof(playerInfo[playerNum]->name) - 1] = '\0';
-}
-
-void setChipCount(Player_Info **playerInfo, int chipCount, int playerNum)
-{
-    if (!playerInfo || !playerInfo[playerNum])
-    {
-        printf("ERROR: player info or player #%d is NULL cannot set chip count\n", playerNum);
-        return;
-    }
-    playerInfo[playerNum]->chips = chipCount;
-}
-
-void setAvatar(Player_Info **playerInfo, Icon *avatarImg, int playerNum)
-{
-    if (!playerInfo || !playerInfo[playerNum])
-    {
-        printf("ERROR: player info or player #%d is NULL cannot set avatar\n", playerNum);
-        return;
-    }
-    playerInfo[playerNum]->avatarImg = avatarImg;
-}
-
-void setPlayerCards(Player_Info **playerInfo, Card *playerCards, int playerNum)
-{
-    if (!playerInfo || !playerInfo[playerNum])
-    {
-        printf("ERROR: player info or player #%d is NULL annot set player cards\n", playerNum);
-        return;
-    }
-    playerInfo[playerNum]->playerCards = playerCards;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void setPot(Poker_Gui *pokerGui, int potAmt)
-{
-    if (!pokerGui)
-    {
-        printf("ERROR: poker gui is NULL cannot set pot\n");
-        return;
-    }
-    pokerGui->pot = potAmt;
-}
 
 void setSocket(Poker_Gui *pokerGui, int socket)
 {
@@ -448,17 +329,22 @@ GtkWidget *createPokerTable(Poker_Gui *pokerGui)
     return pokerTable;
 }
 
+
 void setPlayerNames(Poker_Gui *pokerGui, char **names)
 {
+    GameState* gameState = getGameState(pokerGui); 
+    Player_Info* player; 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        setPlayerName(pokerGui->playerInfo, names[i], i);
+        player = getPlayerInfo(gameState, i); 
+        setName(player, names[i]); 
     }
 }
 
+/*
 static void copyGameStateToGui(Poker_Gui *pokerGui, const GameState *game)
 {
-    if (!pokerGui || !game || !pokerGui->playerInfo) {
+    if (!pokerGui || !game) {
         return;
     }
 
@@ -485,6 +371,7 @@ static void copyGameStateToGui(Poker_Gui *pokerGui, const GameState *game)
         guiPlayer->playerCards = guiPlayer->playerCards;
     }
 }
+    */  // not necessary 
 
 static char *askPlayerName(GtkWindow *parent)
 {
@@ -523,8 +410,10 @@ static void sendPlayerName(Poker_Gui *pokerGui)
 {
     char message[POKER_MESSAGE_SIZE];
     char *playerName = askPlayerName(GTK_WINDOW(pokerGui->Window));
-
-    setPlayerName(pokerGui->playerInfo, playerName, 0);
+    
+    GameState* gameState = getGameState(pokerGui); 
+    Player_Info* player = getPlayerInfo(gameState, 0); //1st player as default 
+    setName(player, playerName); 
 
     if (!formatPlayerNameMessage(message, sizeof(message), playerName)) {
         printf("ERROR: was not able to format name message\n");
@@ -539,16 +428,6 @@ static void sendPlayerName(Poker_Gui *pokerGui)
     g_free(playerName);
 }
 
-/*
-void allocatePlayerInfos(Player_Info **playerInfo)
-{
-    for (int i = 0; i < MAX_PLAYERS; i++)
-    {
-        playerInfo[i] = g_malloc0(sizeof(Player_Info));
-        playerInfo[i]->playerCards = playerInfo[i]->playerCards;
-    }
-}
-    */
 
 void onFoldClicked(GtkWidget *button, gpointer user_data)
 {
@@ -661,7 +540,7 @@ static gboolean onServerMessage(GIOChannel *channel, GIOCondition condition, gpo
         GameState updatedGame;
         initGameState(&updatedGame);
         parseFullGameState(buffer, &updatedGame);
-        copyGameStateToGui(pokerGui, &updatedGame);
+        //copyGameStateToGui(pokerGui, &updatedGame); - no need for this
         gtk_widget_queue_draw(getPokerTable(pokerGui));
     }
 
@@ -684,14 +563,11 @@ void create_poker_gui(GtkApplication *app, gpointer user_data)
     loadCss(pokerGui->Window, CSS);
     loadFont(PIXEL_FONT_RESOURCE);
     loadFont(PIXEL_FONT_RESOURCE2);
-
-    // allocating player info
-    pokerGui->playerInfo = malloc(sizeof(Player_Info *) * MAX_PLAYERS);
-    Player_Info** playerInfo = getAllPlayersInfo(pokerGui); 
-    for (int i = 0; i < MAX_PLAYERS; i++)
-    {
-        playerInfo[i] = malloc(sizeof(Player_Info));
-    }
+    
+    //allocating game state 
+    GameState* gameState = malloc(sizeof(GameState)); 
+    initGameState(gameState); 
+    setGameState(pokerGui, gameState); 
 
     // default initializing playerInfos --> for active player -->
 
@@ -705,9 +581,12 @@ void create_poker_gui(GtkApplication *app, gpointer user_data)
 
     // initializing avatar images
     Icon **avatarImages = getAvatarImages(pokerGui);
+    Player_Info* playerInfo; 
     for (int i = 0; i < MAX_PLAYERS; i++)
     {
-        setAvatar(pokerGui->playerInfo, avatarImages[i], i);
+        playerInfo = getPlayerInfo(gameState, i); 
+        setAvatar(playerInfo, avatarImages[i]);
+       //setAvatar(getPlayerInfo(pokerGui->gameState))
     }
 
     // initializing player names
