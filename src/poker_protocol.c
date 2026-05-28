@@ -165,9 +165,17 @@ bool formatFullGameState(char* buffer, size_t bufferSize, const GameState* gameS
         offset += written;
     }
 
-    for (int i = 0; i < gameState->numPlayers; i++) {
-       // const Player_Info* p = gameState->players[i];
+    int numPlayers = getJoinedPlayers(gameState); 
+    printf("current number of players - %d", numPlayers); 
+
+    for (int i = 0; i < numPlayers; i++) {
         const Player_Info* p = getPlayerInfo(gameState, i); //changing to the getter and setter ver - queency
+
+        if(!p || !getPlayerCards(gameState, i)){
+            printf("player info %d is null or player cards is NULL - cannot write message\n", i); 
+            return false; 
+        }
+
         written = snprintf(buffer + offset, bufferSize - offset, " | Player %d Name = %s | Player %d Chips = %d | Player %d Folded = %d | Player %d Cards = %d:%d,%d:%d",
                            i + 1, p->name,
                            i + 1, p->chips,
