@@ -69,6 +69,7 @@ GtkWidget *createWindow(GtkApplication *app); // creates the window
 GtkWidget *createMainContainer(); // creates the main container
 
 void create_poker_gui(GtkApplication *app, gpointer user_data); // creates the poker gui --> the window, the data, etc
+void createWaitingRoom(GtkApplication *app, gpointer user_data); // creates the lobby gui before the poker table
 
 void setPlayerNames(Poker_Gui *pokerGui, char **names); // passed in an array of all player names --> sets player info
 

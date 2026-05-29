@@ -12,6 +12,7 @@
 
 #include "communication.h"
 #include "game.h"
+#include "lobby.h"
 #include "player.h"
 #include "poker_protocol.h"
 #include "server.h"
@@ -120,6 +121,7 @@ void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers, Game
 
 
 void readMessage(int* clientSockets, int joinedPlayers, int playerIndex, GameState* game){ 
+    // LOBBY_WIRING: normal gameplay messages are handled here after lobby start.
     int clientSocket = clientSockets[playerIndex];
 
     
@@ -129,7 +131,7 @@ void readMessage(int* clientSockets, int joinedPlayers, int playerIndex, GameSta
 
     char buffer[GAME_STATE_MESSAGE_SIZE]; 
     char stateMessage[GAME_STATE_MESSAGE_SIZE];
-    ssize_t n;
+    ssize_t n = 1;
     PokerActionMessage action;
     char playerName[20];
 
@@ -178,6 +180,7 @@ void readMessage(int* clientSockets, int joinedPlayers, int playerIndex, GameSta
 
 void lobby(int serverSocket, int* clientSockets)
 { 
+    // LOBBY_WIRING: keeps clients in the waiting room until Player 1 starts.
     int joinedPlayers = 0; 
     int max_fd = serverSocket; 
     int newClientSocket; 
@@ -218,19 +221,22 @@ void lobby(int serverSocket, int* clientSockets)
         select(max_fd + 1, &socketList, NULL, NULL, NULL);
 
         if (FD_ISSET(serverSocket, &socketList)) {
+            if (gameStarted) {
+                struct sockaddr_in cli_addr;
+                socklen_t clilen = sizeof(cli_addr);
+                int lateClientSocket = accept(serverSocket, (struct sockaddr *) &cli_addr, &clilen);
+
+                if (!hasAcceptionError(lateClientSocket)) {
+                    sendMessage(lateClientSocket, "Game already started\n");
+                    close(lateClientSocket);
+                }
+                continue;
+            }
+
             acceptClient(clientSockets, serverSocket, &joinedPlayers, game);
 
-            if (joinedPlayers >= 3 && !gameStarted) { 
-                printf("Starting new round!\n");
-                startNewRound(game);
-                gameStarted = true;
-
-                broadcastToAll(clientSockets, joinedPlayers, "START_GAME\n"); 
-
-                char buffer[4096];
-                if (formatFullGameState(buffer, sizeof(buffer), game)) {
-                    broadcastToAll(clientSockets, joinedPlayers, buffer);
-                }
+            if (!gameStarted) {
+                broadcastLobbyStateToClients(clientSockets, joinedPlayers, game, SERVER_MAX_PLAYERS);
             }
         }
 
@@ -240,6 +246,16 @@ void lobby(int serverSocket, int* clientSockets)
                 }
 
             if (FD_ISSET(clientSockets[i], &socketList)) {
+                if (!gameStarted) {
+                    bool startedNow = handleLobbyClientMessage(clientSockets, joinedPlayers, i, game, &gameStarted);
+
+                    if (!startedNow) {
+                        broadcastLobbyStateToClients(clientSockets, joinedPlayers, game, SERVER_MAX_PLAYERS);
+                    }
+
+                    continue;
+                }
+
                 readMessage(clientSockets, joinedPlayers, i, game);
 
                 char buffer[4096];

@@ -8,6 +8,8 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 
+#include "communication.h"
+#include "lobby.h"
 
 void error(const char *msg)
 {
@@ -19,11 +21,14 @@ void error(const char *msg)
 //separate mains for 
 int main(int argc, char *argv[])
 {
-    int sockfd, portno, n;
+    // LOBBY_WIRING: terminal client waits in lobby and lets Player 1 start.
+    int sockfd, portno;
     struct sockaddr_in serv_addr;
     struct hostent *server;
 
-    char buffer[256];
+    char buffer[LOBBY_MESSAGE_SIZE];
+    char initialState[4096];
+    int myPlayerNumber = 0;
     
     if (argc < 3) {
         fprintf(stderr,"usage %s hostname port\n", argv[0]);
@@ -51,24 +56,48 @@ int main(int argc, char *argv[])
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
         error("ERROR connecting");
     
-    while(true){
-        printf("Please enter the message: ");
-            bzero(buffer,256);
-            fgets(buffer,255,stdin); 
-        
-        n = write(sockfd,buffer,strlen(buffer)); //returns number of bytes written
+    memset(initialState, 0, sizeof(initialState));
 
-        if (n < 0){
-            perror("ERROR writing to socket");
-            close(clientSockets[playerIndex]);
-            clientSockets[playerIndex] = -1;
+    if (waitInLobby(sockfd, &myPlayerNumber, initialState, sizeof(initialState)) < 0) {
+        close(sockfd);
+        return 1;
+    }
+
+    if (initialState[0] == '\0') {
+        ssize_t stateBytes = receiveMessage(sockfd, initialState, sizeof(initialState) - 1);
+
+        if (stateBytes <= 0) {
+            printf("ERROR: no initial game state received\n");
+            close(sockfd);
+            return 1;
         }
 
-        bzero(buffer,256);
-        n = read(sockfd,buffer,255);
+        initialState[stateBytes] = '\0';
+    }
 
-        if (n < 0) 
+    printf("You are Player %d.\n", myPlayerNumber);
+    printf("Initial game state: %s\n", initialState);
+
+    while(true){
+        printf("Please enter the message: ");
+            bzero(buffer, sizeof(buffer));
+            fgets(buffer, sizeof(buffer) - 1, stdin); 
+        
+        if (sendMessage(sockfd, buffer) < 0) {
+            perror("ERROR writing to socket");
+            break;
+        }
+
+        bzero(buffer, sizeof(buffer));
+        ssize_t bytesRead = receiveMessage(sockfd, buffer, sizeof(buffer) - 1);
+
+        if (bytesRead < 0) 
             error("ERROR reading from socket");
+
+        if (bytesRead == 0) {
+            printf("Server disconnected.\n");
+            break;
+        }
 
         printf("%s\n",buffer);
 

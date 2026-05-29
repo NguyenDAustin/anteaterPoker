@@ -20,8 +20,9 @@ static bool isPlayerInHand(const GameState *game, int playerIndex)
     return !player->hasFolded && player->chips >= 0;
 }
 
-static bool canPlayerAct(const GameState *game, int playerIndex)
+static bool canGamePlayerAct(const GameState *game, int playerIndex)
 {
+    // LOBBY_WIRING: renamed to avoid colliding with player.h's canPlayerAct.
     const Player_Info *player = game->players[playerIndex];
     return isPlayerInHand(game, playerIndex) && player->canAct && player->chips > 0;
 }
@@ -66,7 +67,7 @@ static int nextActingPlayerFrom(const GameState *game, int startIndex)
 
     for (int i = 1; i <= game->numPlayers; i++) {
         int index = (startIndex + i) % game->numPlayers;
-        if (canPlayerAct(game, index)) {
+        if (canGamePlayerAct(game, index)) {
             return index;
         }
     }

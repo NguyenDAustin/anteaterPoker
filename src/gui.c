@@ -1,6 +1,7 @@
 
 #include "gui.h"
 #include "communication.h"
+#include "lobby.h"
 #include "poker_protocol.h"
 #include <string.h>
 
@@ -35,12 +36,21 @@ const char *CSS =
     "   color: rgb(205,193,176);"
     "   font-weight: bold;"
     "   font-size: 17px;"
+    "}"
+
+    ".lobby-label {"
+    "   color: rgb(245, 240, 226);"
+    "   background-color: rgba(22, 47, 31, 0.72);"
+    "   font-family: 'VT323';"
+    "   font-size: 24px;"
+    "   padding: 8px;"
     "}";
 
 const char *WAITING_ROOM_CSS = "waitroom-bg";
 const char *POKER_TABLE_CSS = "poker-bg";
 const char *BUTTON_CSS = "button-bg";
 const char *SLIDER_CSS = "slider-bg";
+const char *LOBBY_LABEL_CSS = "lobby-label";
 
 const char *AVATAR_IMG_RESOURCE = "resources/avatars/avatar1_img.png";
 const char *CHIP_ICON_RESOURCE = "resources/red_chip.png";
@@ -53,6 +63,21 @@ const int SLIDER_HEIGHT = 25;
 const int SLIDER_WIDTH = 300;
 const int CONTROL_AREA_HEIGHT = 75;
 const double DEFAULT_SCREEN_PERCENTAGE = 0.90;
+
+typedef struct {
+    GtkApplication *app;
+    GtkWidget *window;
+    GtkWidget *titleLabel;
+    GtkWidget *statusLabel;
+    GtkWidget *nameEntry;
+    GtkWidget *saveNameButton;
+    GtkWidget *playerLabels[MAX_PLAYERS_COUNT];
+    GtkWidget *startButton;
+    Communication_Bundle *bundle;
+    int socket;
+    int playerNum;
+    bool waitingForInitialState;
+} Lobby_Gui;
 
 // GETTERS + SETTERS
 
@@ -462,33 +487,245 @@ void onCallClicked(GtkWidget *button, gpointer user_data)
         printf("ERROR: was not able to send call message\n");
 }
 
+static void updateLobbyGui(Lobby_Gui *lobbyGui, const LobbyState *lobbyState)
+{
+    // GUI_LOBBY_WIRING: refreshes labels/buttons whenever LOBBY_STATE arrives.
+    char text[128];
+
+    if (!lobbyGui || !lobbyState) {
+        return;
+    }
+
+    snprintf(text, sizeof(text), "Waiting room: %d/%d players",
+             lobbyState->joinedPlayers, lobbyState->maxPlayers);
+    gtk_label_set_text(GTK_LABEL(lobbyGui->titleLabel), text);
+
+    for (int i = 0; i < MAX_PLAYERS_COUNT; i++) {
+        if (i < lobbyState->joinedPlayers) {
+            const char *name = lobbyState->playerNames[i][0] ? lobbyState->playerNames[i] : "Player";
+            snprintf(text, sizeof(text), "Player %d: %s", i + 1, name);
+        } else {
+            snprintf(text, sizeof(text), "Player %d: waiting...", i + 1);
+        }
+
+        gtk_label_set_text(GTK_LABEL(lobbyGui->playerLabels[i]), text);
+    }
+
+    if (lobbyGui->playerNum == 1) {
+        if (canStartLobbyGame(lobbyState->joinedPlayers)) {
+            gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Ready. Click START to begin.");
+            gtk_widget_set_sensitive(lobbyGui->startButton, TRUE);
+        } else {
+            snprintf(text, sizeof(text), "Waiting for at least %d players.", LOBBY_MIN_PLAYERS);
+            gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), text);
+            gtk_widget_set_sensitive(lobbyGui->startButton, FALSE);
+        }
+    } else {
+        gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Waiting for Player 1 to start.");
+        gtk_widget_set_sensitive(lobbyGui->startButton, FALSE);
+    }
+}
+
+static void startPokerGuiFromLobby(Lobby_Gui *lobbyGui, const char *initialState)
+{
+    // GUI_LOBBY_WIRING: closes the lobby window and opens the poker table.
+    if (!lobbyGui || !initialState || initialState[0] == '\0') {
+        return;
+    }
+
+    lobbyGui->bundle->playerNum = lobbyGui->playerNum;
+    strncpy(lobbyGui->bundle->stateMsg, initialState, sizeof(lobbyGui->bundle->stateMsg) - 1);
+    lobbyGui->bundle->stateMsg[sizeof(lobbyGui->bundle->stateMsg) - 1] = '\0';
+
+    gtk_widget_destroy(lobbyGui->window);
+    create_poker_gui(lobbyGui->app, lobbyGui->bundle);
+    g_free(lobbyGui);
+}
+
+static void onLobbyStartClicked(GtkWidget *button, gpointer user_data)
+{
+    // GUI_LOBBY_WIRING: sends Player 1's lobby start request to the server.
+    Lobby_Gui *lobbyGui = user_data;
+    char message[LOBBY_MESSAGE_SIZE];
+
+    (void)button;
+
+    if (!lobbyGui) {
+        return;
+    }
+
+    if (formatLobbyStartRequest(message, sizeof(message))) {
+        if (sendMessage(lobbyGui->socket, message) < 0) {
+            gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Could not send START request.");
+        }
+    }
+}
+
+static void onLobbyNameSubmitted(GtkWidget *widget, gpointer user_data)
+{
+    // CUSTOM_PLAYER_NAME: sends the typed lobby name to the server.
+    Lobby_Gui *lobbyGui = user_data;
+    const char *typedName;
+    char message[POKER_MESSAGE_SIZE];
+
+    (void)widget;
+
+    if (!lobbyGui || !lobbyGui->nameEntry) {
+        return;
+    }
+
+    typedName = gtk_entry_get_text(GTK_ENTRY(lobbyGui->nameEntry));
+
+    if (!formatPlayerNameMessage(message, sizeof(message), typedName)) {
+        gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Enter a name first.");
+        return;
+    }
+
+    if (sendMessage(lobbyGui->socket, message) < 0) {
+        gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Could not send name.");
+        return;
+    }
+
+    gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Name saved.");
+}
+
+static gboolean onLobbyServerMessage(GIOChannel *channel, GIOCondition condition, gpointer user_data)
+{
+    // GUI_LOBBY_WIRING: receives lobby protocol messages without blocking GTK.
+    Lobby_Gui *lobbyGui = user_data;
+    char buffer[GAME_STATE_MESSAGE_SIZE];
+    char *stateStart;
+    LobbyState lobbyState;
+
+    (void)channel;
+
+    if (!lobbyGui) {
+        return FALSE;
+    }
+
+    if (condition & (G_IO_HUP | G_IO_ERR | G_IO_NVAL)) {
+        gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Disconnected from server.");
+        return FALSE;
+    }
+
+    if (!(condition & G_IO_IN)) {
+        return TRUE;
+    }
+
+    memset(buffer, 0, sizeof(buffer));
+    ssize_t bytesRead = receiveMessage(lobbyGui->socket, buffer, sizeof(buffer) - 1);
+
+    if (bytesRead <= 0) {
+        gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Server disconnected.");
+        return FALSE;
+    }
+
+    stateStart = strstr(buffer, "STATE\n");
+
+    if (lobbyGui->waitingForInitialState && stateStart) {
+        startPokerGuiFromLobby(lobbyGui, stateStart);
+        return FALSE;
+    }
+
+    if (sscanf(buffer, "YOU_ARE %d", &lobbyGui->playerNum) == 1) {
+        lobbyGui->bundle->playerNum = lobbyGui->playerNum;
+
+        char playerText[64];
+        snprintf(playerText, sizeof(playerText), "You are Player %d.", lobbyGui->playerNum);
+        gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), playerText);
+    }
+
+    char *lobbyStart = strstr(buffer, "LOBBY_STATE");
+    if (lobbyStart && parseLobbyStateMessage(lobbyStart, &lobbyState)) {
+        updateLobbyGui(lobbyGui, &lobbyState);
+    }
+
+    if (isLobbyStartGameMessage(buffer)) {
+        if (stateStart) {
+            startPokerGuiFromLobby(lobbyGui, stateStart);
+            return FALSE;
+        }
+
+        lobbyGui->waitingForInitialState = true;
+        gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Game starting...");
+    }
+
+    return TRUE;
+}
+
 void createWaitingRoom(GtkApplication *app, gpointer user_data)
 {
+    // GUI_LOBBY_WIRING: creates the interactive GTK lobby before the poker table.
+    Communication_Bundle *bundle = user_data;
+    Lobby_Gui *lobbyGui;
+    GtkWidget *mainBox;
+
     printf("Creating Waitroom\n");
-    int socket = user_data;
 
-    // creating wait room window
-    GtkWidget *window = gtk_application_window_new(app);
-    gtk_window_set_title(GTK_WINDOW(window), TITLE);
-    gtk_window_set_default_size(GTK_WINDOW(window), WINDOW_HEIGHT, WINDOW_WIDTH);
-    loadCss(window, CSS);
-    setStyle(window, WAITING_ROOM_CSS);
+    if (!bundle) {
+        return;
+    }
 
-    // creating box
-    GtkWidget *mainBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_container_add(GTK_CONTAINER(window), mainBox);
+    lobbyGui = g_malloc0(sizeof(Lobby_Gui));
+    lobbyGui->app = app;
+    lobbyGui->bundle = bundle;
+    lobbyGui->socket = bundle->socket;
+    lobbyGui->playerNum = bundle->playerNum;
 
-    // creating start button
-    GtkWidget *startButton = gtk_button_new_with_label("START");
-    gtk_widget_set_size_request(startButton, BUTTON_WIDTH, BUTTON_HEIGHT);
-    gtk_widget_set_halign(startButton, GTK_ALIGN_CENTER);
-    gtk_box_pack_start(GTK_BOX(mainBox), startButton, FALSE, FALSE, 0);
-    setStyle(startButton, BUTTON_CSS);
+    lobbyGui->window = gtk_application_window_new(app);
+    gtk_window_set_title(GTK_WINDOW(lobbyGui->window), TITLE);
+    gtk_window_set_default_size(GTK_WINDOW(lobbyGui->window), WINDOW_HEIGHT, WINDOW_WIDTH);
+    loadCss(lobbyGui->window, CSS);
+    loadFont(PIXEL_FONT_RESOURCE);
+    loadFont(PIXEL_FONT_RESOURCE2);
+    setStyle(lobbyGui->window, WAITING_ROOM_CSS);
 
-    // icons for when a person joins
+    mainBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+    gtk_widget_set_halign(mainBox, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(mainBox, GTK_ALIGN_CENTER);
+    gtk_container_add(GTK_CONTAINER(lobbyGui->window), mainBox);
 
-    gtk_widget_show_all(window);
-    // setWindow(pokerGui, createWindow(app));
+    lobbyGui->titleLabel = gtk_label_new("Waiting room: connecting...");
+    setStyle(lobbyGui->titleLabel, LOBBY_LABEL_CSS);
+    gtk_box_pack_start(GTK_BOX(mainBox), lobbyGui->titleLabel, FALSE, FALSE, 0);
+
+    lobbyGui->statusLabel = gtk_label_new("Connecting to server...");
+    setStyle(lobbyGui->statusLabel, LOBBY_LABEL_CSS);
+    gtk_box_pack_start(GTK_BOX(mainBox), lobbyGui->statusLabel, FALSE, FALSE, 0);
+
+    lobbyGui->nameEntry = gtk_entry_new();
+    gtk_entry_set_max_length(GTK_ENTRY(lobbyGui->nameEntry), 19);
+    gtk_entry_set_placeholder_text(GTK_ENTRY(lobbyGui->nameEntry), "Enter your name");
+    gtk_box_pack_start(GTK_BOX(mainBox), lobbyGui->nameEntry, FALSE, FALSE, 0);
+    g_signal_connect(lobbyGui->nameEntry, "activate", G_CALLBACK(onLobbyNameSubmitted), lobbyGui);
+
+    lobbyGui->saveNameButton = gtk_button_new_with_label("SAVE NAME");
+    gtk_widget_set_halign(lobbyGui->saveNameButton, GTK_ALIGN_CENTER);
+    setStyle(lobbyGui->saveNameButton, BUTTON_CSS);
+    gtk_box_pack_start(GTK_BOX(mainBox), lobbyGui->saveNameButton, FALSE, FALSE, 0);
+    g_signal_connect(lobbyGui->saveNameButton, "clicked", G_CALLBACK(onLobbyNameSubmitted), lobbyGui);
+
+    for (int i = 0; i < MAX_PLAYERS_COUNT; i++) {
+        char labelText[64];
+        snprintf(labelText, sizeof(labelText), "Player %d: waiting...", i + 1);
+        lobbyGui->playerLabels[i] = gtk_label_new(labelText);
+        setStyle(lobbyGui->playerLabels[i], LOBBY_LABEL_CSS);
+        gtk_box_pack_start(GTK_BOX(mainBox), lobbyGui->playerLabels[i], FALSE, FALSE, 0);
+    }
+
+    lobbyGui->startButton = gtk_button_new_with_label("START");
+    gtk_widget_set_size_request(lobbyGui->startButton, BUTTON_WIDTH * 2, BUTTON_HEIGHT * 2);
+    gtk_widget_set_halign(lobbyGui->startButton, GTK_ALIGN_CENTER);
+    gtk_widget_set_sensitive(lobbyGui->startButton, FALSE);
+    setStyle(lobbyGui->startButton, BUTTON_CSS);
+    gtk_box_pack_start(GTK_BOX(mainBox), lobbyGui->startButton, FALSE, FALSE, 0);
+    g_signal_connect(lobbyGui->startButton, "clicked", G_CALLBACK(onLobbyStartClicked), lobbyGui);
+
+    GIOChannel *serverChannel = g_io_channel_unix_new(lobbyGui->socket);
+    g_io_add_watch(serverChannel, G_IO_IN | G_IO_HUP | G_IO_ERR | G_IO_NVAL, onLobbyServerMessage, lobbyGui);
+    g_io_channel_unref(serverChannel);
+
+    gtk_widget_show_all(lobbyGui->window);
 }
 
 static gboolean onServerMessage(GIOChannel *channel, GIOCondition condition, gpointer user_data)
