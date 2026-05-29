@@ -25,7 +25,7 @@ typedef struct Player_Info
     int betSize;
     int currentBet;
     PlayerType type;
-    bool isActive;
+    bool canAct;
     bool hasFolded; 
 
 
@@ -74,8 +74,7 @@ void dealHoleCards(Player_Info *player, Card card1, Card card2);
 // start of each betting round
 void resetBetSize(Player_Info *player);
 
-void takeAction(Player_Info *player, PlayerAction action);
 void foldPlayer(Player_Info *player);
-bool isPlayerActive(const Player_Info *player);
+bool canPlayerAct(const Player_Info *player);
 
 #endif

@@ -25,11 +25,9 @@ void initPlayer(Player_Info *player, const char *name, int seat, int chips, Play
     player->betSize = 0;
     player->currentBet = 0;
     player->type = type;
-    player->isActive = true; //is this not the same thing as hasFolded ?
+    player->canAct = chips > 0; //can act in the current hand if they have chips
     player->hasFolded = false;
     player->avatarImg = NULL;
-
-    //player->playerCards = player->hand; - ok remove for now b/c 
 
     player->playerCards[0] = empty_card();
     player->playerCards[1] = empty_card();
@@ -56,7 +54,7 @@ void resetPlayer(Player_Info *player)
     //player->playerCards = NULL; //reset this way
     player->betSize = 0;
     player->currentBet = 0;
-    player->isActive = true;
+    player->canAct = player->chips > 0;
     player->hasFolded = false;
 }
 
@@ -148,14 +146,14 @@ const Card *getCardsConst(const Player_Info *player)
     return player->playerCards;
 }
 
-bool isPlayerActive(const Player_Info *player)
+bool canPlayerAct(const Player_Info *player)
 {
     if (!player)
     {
         return false;
     }
 
-    return player->isActive;
+    return player->canAct;
 }
 
 void setName(Player_Info *player, const char *name)
@@ -242,6 +240,12 @@ void setCards(Player_Info* player, Card* playerCards){
         return;
     }
 
+    if (!playerCards) {
+        player->playerCards[0] = empty_card();
+        player->playerCards[1] = empty_card();
+        return;
+    }
+
     player->playerCards[0] = playerCards[0]; 
     player->playerCards[1] = playerCards[1]; 
 }
@@ -254,7 +258,8 @@ void foldPlayer(Player_Info *player)
         return;
     }
 
-    player->isActive = false;
+    player->canAct = false;
+    player->hasFolded = true; 
 }
 
 void dealHoleCards(Player_Info *player, Card card1, Card card2)
@@ -264,8 +269,6 @@ void dealHoleCards(Player_Info *player, Card card1, Card card2)
         printf("ERROR: player is NULL cannot deal hole cards\n");
         return;
     }
-
-    //player->playerCards = player->hand;
 
     player->playerCards[0] = card1; 
     player->playerCards[1] = card2;
@@ -280,50 +283,4 @@ void resetBetSize(Player_Info *player)
     }
 
     player->betSize = 0;
-}
-
-void takeAction(Player_Info *player, PlayerAction action)
-{
-    if (!player)
-    {
-        printf("ERROR: player is NULL cannot take action\n");
-        return;
-    }
-
-    int amount = action.amount;
-
-    switch (action.actionType)
-    {
-    case FOLD:
-        foldPlayer(player);
-        break;
-
-    case CHECK:
-        break;
-
-    case CALL:
-    case BET:
-    case RAISE:
-    {
-        if (amount < 0)
-        {
-            return;
-        }
-
-        int paid = amount;
-
-        if (paid > player->chips)
-        {
-            paid = player->chips;
-        }
-
-        player->chips -= paid;
-        player->betSize += paid;
-        break;
-    }
-
-    default:
-        printf("ERROR: invalid player action\n");
-        break;
-    }
 }

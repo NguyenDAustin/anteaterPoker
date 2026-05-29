@@ -14,7 +14,7 @@ static bool isGamePlayerActive(const GameState *game, int playerIndex)
     }
 
     const Player_Info *player = game->players[playerIndex];
-    return player->isActive && !player->hasFolded;
+    return !player->hasFolded;
 }
 
 // Find the next active player index
@@ -359,7 +359,7 @@ void initGameState(GameState *game)
         game->players[i]->betSize = 0;
         game->players[i]->currentBet = 0;
         game->players[i]->hasFolded = false;
-        game->players[i]->isActive = true; //true it has to be active right ???
+        game->players[i]->canAct = true; //true it has to be active right ???
         game->players[i]->playerCards[0] = empty_card(); 
         game->players[i]->playerCards[1] = empty_card();
     }
@@ -377,7 +377,11 @@ void resetGameState(GameState *game)
 
     for (int i = 0; i < game->numPlayers; i++) {
         Player_Info *player = game->players[i];
-        player->isActive = true;
+        if(player->chips <= 0){
+            player->canAct = false;
+            continue; 
+        }
+        player->canAct = true;
         player->currentBet = 0;
         player->betSize = 0;
         player->playerCards[0] = empty_card(); 

@@ -65,7 +65,7 @@ bool formatGameStateMessage(char* buffer, size_t bufferSize, const GameState* ga
         offset = appendFormatted(buffer, bufferSize, offset,
                                  "player %d %s %d %d %d %d %d %d %d %d\n",
                                  i, p->name, p->chips, p->currentBet,
-                                 p->hasFolded ? 1 : 0, p->isActive ? 1 : 0,
+                                 p->hasFolded ? 1 : 0, p->canAct ? 1 : 0,
                                  p->playerCards[0].rank, (int)p->playerCards[0].suit,
                                  p->playerCards[1].rank, (int)p->playerCards[1].suit);
         if (offset < 0) return false;
@@ -138,12 +138,12 @@ bool parseGameStateMessage(const char* message, GameState* game)
                 cursor += consumed;
             }
         } else if (strncmp(line, "player ", 7) == 0) {
-            int idx, chips, currentBet, hasFolded, isActive;
+            int idx, chips, currentBet, hasFolded, canAct;
             int r1, s1, r2, s2;
             char name[32];
             int matched = sscanf(line, "player %d %31s %d %d %d %d %d %d %d %d",
                                  &idx, name, &chips, &currentBet,
-                                 &hasFolded, &isActive,
+                                 &hasFolded, &canAct,
                                  &r1, &s1, &r2, &s2);
             if (matched == 10 && idx >= 0 && idx < MAX_PLAYERS_COUNT) {
                 Player_Info* p = game->players[idx]; //changed player state to Player_Info
@@ -152,7 +152,7 @@ bool parseGameStateMessage(const char* message, GameState* game)
                 p->chips = chips;
                 p->currentBet = currentBet;
                 p->hasFolded = hasFolded != 0;
-                p->isActive = isActive != 0;
+                p->canAct = canAct != 0;
                 writeCard(&p->playerCards[0], r1, s1);
                 writeCard(&p->playerCards[1], r2, s2);
             }

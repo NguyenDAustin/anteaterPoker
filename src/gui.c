@@ -365,7 +365,7 @@ static void copyGameStateToGui(Poker_Gui *pokerGui, const GameState *game)
         guiPlayer->chips = statePlayer->chips;
         guiPlayer->currentBet = statePlayer->currentBet;
         guiPlayer->hasFolded = statePlayer->hasFolded;
-        guiPlayer->isActive = statePlayer->isActive;
+        guiPlayer->canAct = statePlayer->canAct;
         guiPlayer->playerCards[0] = statePlayer->playerCards[0];
         guiPlayer->playerCards[1] = statePlayer->playerCards[1];
         guiPlayer->playerCards = guiPlayer->playerCards;
@@ -530,7 +530,7 @@ static gboolean onServerMessage(GIOChannel *channel, GIOCondition condition, gpo
                    gameState->players[i]->chips,
                    gameState->players[i]->currentBet,
                    gameState->players[i]->hasFolded,
-                   gameState->players[i]->isActive);
+                   gameState->players[i]->canAct);
         }
 
         if (parsed) {

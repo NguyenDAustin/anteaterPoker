@@ -1,14 +1,14 @@
 #include "rules.h"
 
 bool isValidCheck(GameState *game, Player *player){
-    if (!player->isActive) {
+    if (!player->canAct) {
         return false; 
     }
     return true;
 }
 
 bool isValidCall(GameState *game, Player *player){
-    if (!player->isActive) {
+    if (!player->canAct) {
         return false; 
     }
     else if (player->currentBet >= game->currentBet) {
@@ -21,7 +21,7 @@ bool isValidCall(GameState *game, Player *player){
 }
 
 bool isValidRaise(GameState *game, Player *player, int amount){
-    if (!player->isActive) {
+    if (!player->canAct) {
         return false; // Player has already folded
     } else if (amount <= 0) {
         return false; // Raise amount must be positive
@@ -32,7 +32,7 @@ bool isValidRaise(GameState *game, Player *player, int amount){
 }
 
 bool isValidFold(GameState *game, Player *player){
-    if (!player->isActive) {
+    if (!player->canAct) {
         return false; // Player has already folded
     }
 
@@ -40,7 +40,7 @@ bool isValidFold(GameState *game, Player *player){
 }
 
 bool isValidAnteaterAction(GameState *game, Player *player, Hand *hand){
-    if (!player->isActive) {
+    if (!player->canAct) {
         return false; // Player has already folded
     }
     else if (player->playerCards[0].rank != 0 && player->playerCards[1].rank != 0) { // if no anteater cards are present, the action is invalid
@@ -100,7 +100,8 @@ void applyFold(GameState *game, Player *player){
         return; // Invalid fold action
     }
     else {
-        player->isActive = false; // Player folds and is no longer active in the hand
+        player->canAct = false;
+        player->hasFolded = true; // Player folds and is no longer active in the hand
 
     }
 }

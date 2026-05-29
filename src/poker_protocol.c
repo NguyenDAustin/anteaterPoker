@@ -220,7 +220,7 @@ bool formatFullGameState(char *buffer, size_t bufferSize, const GameState *game)
             p->chips,
             p->currentBet,
             p->hasFolded ? 1 : 0,
-            p->isActive ? 1 : 0,
+            p->canAct ? 1 : 0,
             p->playerCards[0].rank,
             (int)p->playerCards[0].suit,
             p->playerCards[1].rank,
