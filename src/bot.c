@@ -1,10 +1,9 @@
 #include "bot.h"
 #include <stdlib.h>
 
-void initBot(Bot *bot, const char *name, int seat, int chips, BotDifficulty difficulty)
+void initBot(Player_Info *bot, const char *name, int seat, int chips)
 {
-    initPlayer(&bot->player, name, seat, chips, BOT_PLAYER);
-    bot->difficulty = difficulty;
+    initPlayer(bot, name, seat, chips, BOT_PLAYER);
 }
 
 int getChenValue(Card card)
@@ -84,26 +83,47 @@ int evalPreFlop(Card hand[2])
     return score;
 }
 
-PlayerAction getBotPreFlopAction(Player *bot)
+PlayerAction getBotPreFlopAction(Player_Info *bot, GameState *game)
 {
-    int score = evalPreFlop(bot->hand);
+    int score = evalPreFlop(bot->playerCards);
+    int callAmount = game->currentBet - bot->currentBet;
 
-    if (score <= 3)
-        return (PlayerAction){FOLD, 0};
+    if (callAmount <= 0)
+    {
+        if (score >= 9)
+            return (PlayerAction) {RAISE, 2 * game->bigBlind};
+        else
+            return (PlayerAction) {CHECK, 0};
+    }
+
+    if (score >= 10)
+    {
+        return (PlayerAction) {RAISE, callAmount};
+    }
+    else if (score >= 7)
+    {
+        return (PlayerAction) {CALL, callAmount};
+    }
+    else if (score >= 5 && callAmount <= game->bigBlind)
+    {
+        return (PlayerAction) {CALL, callAmount};
+    }
     else
-        return (PlayerAction){CHECK, 0};
+    {
+        return (PlayerAction) {FOLD, 0};
+    }
 }
 
-PlayerAction getBotPostFlopAction(Player *bot)
+PlayerAction getBotPostFlopAction(Player_Info *bot, GameState *game)
 {
     return (PlayerAction){CHECK, 0};
 }
 
-PlayerAction getBotAction(Player *bot)
+PlayerAction getBotAction(Player_Info *bot, GameState *game)
 {
-    if (/*preflop*/)
-        return getBotPreFlopAction;
+    if (game->round == ROUND_PRE_FLOP)
+        return getBotPreFlopAction(bot, game);
 
     else
-        return getbotPostFlopAction;
+        return getBotPostFlopAction(bot, game);
 }

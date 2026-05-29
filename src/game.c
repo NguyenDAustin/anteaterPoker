@@ -132,7 +132,7 @@ static void setPlayerCards(Player_Info *player, Card first, Card second)
 {
     player->playerCards[0] = first;
     player->playerCards[1] = second;
-   /*
+   
     player->hand[0] = first;
     player->hand[1] = second;
     player->playerCards = player->hand;
