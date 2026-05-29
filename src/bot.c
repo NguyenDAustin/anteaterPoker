@@ -91,7 +91,7 @@ PlayerAction getBotPreFlopAction(Player_Info *bot, GameState *game)
     if (callAmount <= 0)
     {
         if (score >= 9)
-            return (PlayerAction) {RAISE, 2 * game->bigBlind};
+            return (PlayerAction) {RAISE, 0.05 * bot->chips};
         else
             return (PlayerAction) {CHECK, 0};
     }
