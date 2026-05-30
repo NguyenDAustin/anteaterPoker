@@ -3,6 +3,7 @@
 #include "communication.h"
 #include "lobby.h"
 #include "poker_protocol.h"
+#include "timer.h"
 #include <string.h>
 
 const char *TITLE = "ANTEATER POKER";
@@ -841,6 +842,15 @@ void create_poker_gui(GtkApplication *app, gpointer user_data)
     // creating main container
     GtkWidget *mainBox = createMainContainer();
     gtk_container_add(GTK_CONTAINER(pokerGui->Window), mainBox);
+
+    //create timer
+    GtkWidget *timerLabel = gtk_label_new("Time: 0");
+    gtk_box_pack_start(GTK_BOX(mainBox), timerLabel, FALSE, FALSE, 5);
+    setStyle(timerLabel, LOBBY_LABEL_CSS);
+    Timer *timer = g_malloc(sizeof(Timer));
+    timer->label = timerLabel;
+
+start_timer(timer);
 
     // creating poker table
     pokerGui->pokerTable = createPokerTable(pokerGui);
