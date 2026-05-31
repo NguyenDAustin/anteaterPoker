@@ -849,8 +849,7 @@ void create_poker_gui(GtkApplication *app, gpointer user_data)
     setStyle(timerLabel, LOBBY_LABEL_CSS);
     Timer *timer = g_malloc(sizeof(Timer));
     timer->label = timerLabel;
-
-start_timer(timer);
+    start_timer(timer);
 
     // creating poker table
     pokerGui->pokerTable = createPokerTable(pokerGui);

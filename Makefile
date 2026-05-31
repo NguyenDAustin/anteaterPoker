@@ -9,11 +9,11 @@ GTK_LIBS = `pkg-config --libs gtk+-3.0`
 HOST = bondi.eecs.uci.edu
 PORT = 10215 
 
-COMMON_SRC = src/deck.c src/hand.c src/state.c src/game.c src/communication.c src/poker_protocol.c src/player.c src/card.c src/state_protocol.c src/lobby.c
+COMMON_SRC = src/deck.c src/hand.c src/state.c src/game.c src/communication.c src/poker_protocol.c src/player.c src/card.c src/state_protocol.c src/lobby.c 
 
 SERVER_SRC = src/server.c $(COMMON_SRC)
 CLIENT_SRC = src/client.c $(COMMON_SRC)
-GUI_SRC =  src/render.c src/gui_client.c src/gui.c src/playerbox_render.c $(COMMON_SRC)
+GUI_SRC =  src/render.c src/gui_client.c src/gui.c src/playerbox_render.c src/timer.c $(COMMON_SRC)
 
 all: server client
 
