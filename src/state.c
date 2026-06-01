@@ -222,13 +222,13 @@ void setPlayerCards(GameState* game, int playerIndex, Card* playerCards){
 }
 
 // Get a dealer card
-Card getDealerCard(const GameState *game, int dealerCardIndex)
+const Card* getDealerCards(const GameState* game)
 {
-    if (!game || dealerCardIndex < 0 || dealerCardIndex >= MAX_DEALER_CARDS) {
-        return empty_card();
+    if(!game){
+        printf("ERROR could not get dealer cards b/c gamestate is NULL\n"); 
+        return NULL; 
     }
-
-    return game->board.cards[dealerCardIndex];
+    return game->board.cards; 
 }
 
 // Set a dealer card

@@ -53,7 +53,7 @@ typedef struct
 const char* getName(const Player_Info* playerInfo); 
 int getChipCount(const Player_Info* playerInfo); 
 Icon* getAvatar(const Player_Info* playerInfo); 
-Card* getCards(const Player_Info* playerInfo);
+Card* getCards(Player_Info* playerInfo);
 bool getReadyStatus(const Player_Info* playerInfo); 
 
 //SETTER FUNCTIONS FOR PLAYER INFO - NO PLAYER NUM GIVEN

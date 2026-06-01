@@ -55,7 +55,7 @@ int getTurnNumber(const GameState *game);
 Round getRound(const GameState *game);
 Card getPlayerCard(const GameState *game, int playerIndex, int cardSlot);
 Card* getPlayerCards(const GameState* game, int playerIndex); 
-Card getDealerCard(const GameState *game, int dealerCardIndex);
+const Card* getDealerCards(const GameState* game);
 Card* getDealerCards(const GameState* game);
 int getPlayerChipCount(const GameState* game, int playerIndex); 
 int getPot(const GameState* game); 
