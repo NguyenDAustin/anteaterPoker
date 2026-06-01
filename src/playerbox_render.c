@@ -153,11 +153,14 @@ void drawPlayerInfoBox(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, Pl
     Round round = getRound(gameState); 
 
     //add the cards -
-    if(currPlayer || round == ROUND_SHOWDOWN){
+    if(currPlayer){
         drawCards(cr, images, MAX_PLAYER_CARDS, playerCards, cardW, cardH, cardXPos, cardYPos); 
     }
-    else{
-        drawCards(cr, images, MAX_PLAYER_CARDS, NULL, cardW, cardH, cardXPos, cardYPos);
+
+    if(playerInfo->hasFolded){ //player has folded --> haze over them now
+        drawRoundedBoxPath(cr, xPos, yPos, boxWidth, boxHeight);  //xPos and yPos is top left corner
+        cairo_set_source_rgba(cr, getRed(PLAYER_BOX_COLOR), getGreen(PLAYER_BOX_COLOR), getBlue(PLAYER_BOX_COLOR), 0.5);  
+        cairo_fill_preserve(cr);
     }
 
     cairo_restore(cr);

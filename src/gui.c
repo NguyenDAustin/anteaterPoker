@@ -843,12 +843,14 @@ void create_poker_gui(GtkApplication *app, gpointer user_data)
 
     
     //creating next round button - only shown during showdown
+    /*
     GtkWidget* nextRound = gtk_button_new_with_label("NEXT ROUND"); 
     gtk_box_pack_start(GTK_BOX(buttonBox), nextRound, FALSE, FALSE, 0); 
     gtk_widget_set_size_request(nextRound, BUTTON_WIDTH, BUTTON_HEIGHT);
     setStyle(nextRound, BUTTON_CSS);
     g_signal_connect(nextRound, "clicked", G_CALLBACK(onNextRoundClicked), pokerGui);
     pokerGui->nextRoundButton = nextRound; 
+    */
 
 
     // creating fold button

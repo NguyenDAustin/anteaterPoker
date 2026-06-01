@@ -172,31 +172,9 @@ void readMessage(int* clientSockets, int joinedPlayers, int playerIndex, GameSta
     printf("message being read\n"); 
 
     n = receiveMessage(clientSocket, buffer, sizeof(buffer));
-
-    if(strncmp(buffer, "NEXT_ROUND", 10) == 0){
-        printf("Player %d requested next round\n", playerIndex + 1);
-
-        if (getRound(game) == ROUND_SHOWDOWN) {
-            Player_Info* player = game->players[playerIndex];
-            if (!player->isReady) {
-                game->nextRoundPlayers++;
-                setReadyStatus(player, true);
-            }
-
-            printf("next round players: %d\n", game->nextRoundPlayers);
-
-            if(game->nextRoundPlayers == joinedPlayers){  //all players requested next round
-                game->nextRoundPlayers = 0;
-                for(int i = 0; i < game->numPlayers; i++){
-                    setReadyStatus(game->players[i], false); 
-                }
-
-                startNewRound(game); 
-                playBotTurns(game);
-            }
-        }
-    }
-    else if (parsePlayerNameMessage(buffer, playerName, sizeof(playerName))) {
+    
+    
+    if (parsePlayerNameMessage(buffer, playerName, sizeof(playerName))) {
         strncpy(game->players[playerIndex]->name, playerName, sizeof(game->players[playerIndex]->name) - 1);
         game->players[playerIndex]->name[sizeof(game->players[playerIndex]->name) - 1] = '\0';
         printf("Player %d name set to %s\n", playerIndex + 1, game->players[playerIndex]->name); 
@@ -321,6 +299,11 @@ void lobby(int serverSocket, int* clientSockets)
                 }
 
                 readMessage(clientSockets, joinedPlayers, i, game);
+
+                if(getRound(game) == ROUND_SHOWDOWN){
+                    startNewRound(game);
+                }
+                
                 playBotTurns(game);
 
                 char buffer[4096];

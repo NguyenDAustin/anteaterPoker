@@ -699,7 +699,7 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
 
     //drawing pot
 
-    gtk_widget_hide(pokerGui->nextRoundButton);
+    //gtk_widget_hide(pokerGui->nextRoundButton);
     Round round = getRound(gameState); 
     int cardsToDeal; 
 
@@ -717,6 +717,8 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
     }
     else if(round == ROUND_SHOWDOWN){ // draw a button to wait until next round 
         cardsToDeal = 5; 
+        /*
+        cardsToDeal = 5; 
         char message[100]; 
         snprintf(message, sizeof(message), "%d - PLAYERS READY FOR NEXT ROUND", gameState->nextRoundPlayers); 
         double fontSize = areaHeight*0.03; 
@@ -724,6 +726,7 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
         double yPos = areaHeight * 0.1; 
         drawText(cr, PLAYER_TEXT_COLOR, message, fontSize, xPos, yPos); 
         gtk_widget_show(pokerGui->nextRoundButton); 
+        */
     }
     else{
         cardsToDeal = 0; 
