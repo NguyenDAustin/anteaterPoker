@@ -40,23 +40,23 @@ void draw_hand(Deck *deck, Hand *hand) //this is your array queency for hand
 }
 
 
-
-void draw_board(Deck *deck, Card board[BOARD_SIZE]) //this is your array queency but for the hand
+//this is your array queency but for the hand
+void draw_board(Deck *deck, Card board[BOARD_SIZE])
 {
     for (int i = 0; i < BOARD_SIZE; i++) {
         board[i] = deal(deck);
     }
 
+    anteater_board(deck, board);
 }
 
-void anteater_board(Deck *deck, Card board[BOARD_SIZE]) //checks for anteater
+void anteater_board(Deck *deck, Card board[BOARD_SIZE])
 {
-    for (int i = 0; i < BOARD_SIZE; i++){
-        if (board[i].rank == ANTEATER_CARD){
-            draw_board(deck, board);
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        while (board[i].type == ANTEATER_CARD) {
+            board[i] = deal(deck);
         }
     }
-    
 }
 
 
@@ -532,6 +532,13 @@ int eval_points(Card player_cards[2], Card board_cards[5])
         cards[i + 2] = board_cards[i];
     }
 
+    // replace Anteater in hand
+    for (int i = 0; i < 2; i++) {
+        if (cards[i].type == ANTEATER_CARD) {
+        cards[i] = best_anteater_card(player_cards, board_cards);
+        }
+    }
+    
     sort(cards, count);
 
     if (royalFlush(cards, count)) {
