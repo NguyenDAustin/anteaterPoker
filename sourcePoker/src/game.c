@@ -171,7 +171,13 @@ static void dealBoardCard(GameState *game)
         return;
     }
 
-    setDealerCard(game, game->board.count, deal(game->deck));
+    Card dealt = deal(game->deck);
+
+    while (dealt.type == ANTEATER_CARD) {
+        dealt = deal(game->deck);
+    }
+
+    setDealerCard(game, game->board.count, dealt);
 }
 
 // Resets round state, rotates dealer/blinds, deals cards, and starts pre-flop.
