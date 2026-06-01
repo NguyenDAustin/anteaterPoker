@@ -142,7 +142,16 @@ void readMessage(int* clientSockets, int joinedPlayers, int playerIndex, GameSta
 
     n = receiveMessage(clientSocket, buffer, sizeof(buffer));
 
-    if (parsePlayerNameMessage(buffer, playerName, sizeof(playerName))) {
+    if(strncmp(buffer, "NEXT_ROUND", 10) == 0){
+        printf("Player %d requested next round\n", playerIndex + 1);
+        game->nextRoundPlayers = game->nextRoundPlayers + 1; 
+        
+        if(getRound(game) == ROUND_SHOWDOWN && game->nextRoundPlayers == joinedPlayers){  //is showdown and all players requested next round
+            game->nextRoundPlayers = 0; 
+            startNewRound(game); 
+        }
+    }
+    else if (parsePlayerNameMessage(buffer, playerName, sizeof(playerName))) {
         strncpy(game->players[playerIndex]->name, playerName, sizeof(game->players[playerIndex]->name) - 1);
         game->players[playerIndex]->name[sizeof(game->players[playerIndex]->name) - 1] = '\0';
         printf("Player %d name set to %s\n", playerIndex + 1, game->players[playerIndex]->name); 
@@ -261,15 +270,6 @@ void lobby(int serverSocket, int* clientSockets)
                 char buffer[4096];
                 if (formatFullGameState(buffer, sizeof(buffer), game)) {
                     broadcastToAll(clientSockets, joinedPlayers, buffer);
-                }
-
-                if (game->round == ROUND_SHOWDOWN) {
-                    printf("Round ended. Starting next round.\n");
-                    startNewRound(game);
-
-                    if (formatFullGameState(buffer, sizeof(buffer), game)) {
-                        broadcastToAll(clientSockets, joinedPlayers, buffer);
-                    }
                 }
             }
         }

@@ -23,6 +23,7 @@ typedef struct Poker_Gui
     // Drawing Areas
     GtkWidget *pokerTable;
     GtkWidget *raiseSlider;
+    GtkWidget* nextRoundButton; 
 
     // image resources
     Icon **images;

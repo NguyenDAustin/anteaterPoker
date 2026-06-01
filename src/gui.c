@@ -367,38 +367,6 @@ void setPlayerNames(Poker_Gui *pokerGui, char **names)
     }
 }
 
-/*
-static void copyGameStateToGui(Poker_Gui *pokerGui, const GameState *game)
-{
-    if (!pokerGui || !game) {
-        return;
-    }
-
-    pokerGui->turn = game->currentPlayerIndex;
-    pokerGui->pot = game->pot;
-    pokerGui->dealerCards = (Card *)game->board.cards;
-
-    for (int i = 0; i < MAX_PLAYERS; i++) {
-        Player_Info *guiPlayer = pokerGui->playerInfo[i];
-        const Player_Info *statePlayer = game->players[i];
-
-        if (!guiPlayer) {
-            continue;
-        }
-
-        strncpy(guiPlayer->name, statePlayer->name, sizeof(guiPlayer->name) - 1);
-        guiPlayer->name[sizeof(guiPlayer->name) - 1] = '\0';
-        guiPlayer->chips = statePlayer->chips;
-        guiPlayer->currentBet = statePlayer->currentBet;
-        guiPlayer->hasFolded = statePlayer->hasFolded;
-        guiPlayer->canAct = statePlayer->canAct;
-        guiPlayer->playerCards[0] = statePlayer->playerCards[0];
-        guiPlayer->playerCards[1] = statePlayer->playerCards[1];
-        guiPlayer->playerCards = guiPlayer->playerCards;
-    }
-}
-    */  // not necessary 
-
 static char *askPlayerName(GtkWindow *parent)
 {
     GtkWidget *dialog = gtk_dialog_new_with_buttons("Player Name",
@@ -485,6 +453,14 @@ void onCallClicked(GtkWidget *button, gpointer user_data)
     }
 
     if (sendMessage(socket, message) < 0)
+        printf("ERROR: was not able to send call message\n");
+}
+
+void onNextRoundClicked(GtkWidget *button, gpointer user_data){
+    Poker_Gui* pokerGui = user_data; 
+    int socket =  getSocket(pokerGui); 
+
+    if(sendMessage(socket, "NEXT_ROUND\n") < 0) 
         printf("ERROR: was not able to send call message\n");
 }
 
@@ -860,6 +836,16 @@ void create_poker_gui(GtkApplication *app, gpointer user_data)
     gtk_box_pack_start(GTK_BOX(mainBox), buttonBox, FALSE, FALSE, 0);
     gtk_widget_set_halign(buttonBox, GTK_ALIGN_CENTER);
     gtk_widget_set_margin_bottom(buttonBox, 25);
+
+    
+    //creating next round button - only shown during showdown
+    GtkWidget* nextRound = gtk_button_new_with_label("NEXT ROUND"); 
+    gtk_box_pack_start(GTK_BOX(buttonBox), nextRound, FALSE, FALSE, 0); 
+    gtk_widget_set_size_request(nextRound, BUTTON_WIDTH, BUTTON_HEIGHT);
+    setStyle(nextRound, BUTTON_CSS);
+    g_signal_connect(nextRound, "clicked", G_CALLBACK(onNextRoundClicked), pokerGui);
+    pokerGui->nextRoundButton = nextRound; 
+
 
     // creating fold button
     GtkWidget *foldButton = gtk_button_new_with_label("FOLD");

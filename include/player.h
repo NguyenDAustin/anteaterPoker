@@ -28,6 +28,8 @@ typedef struct Player_Info
     bool canAct;
     bool hasFolded; 
 
+    //add a boolean for is player ready for next round
+
 
 } Player_Info;
 

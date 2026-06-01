@@ -127,6 +127,9 @@ bool parseGameStateMessage(const char* message, GameState* game)
             game->numPlayers = value;
         } else if (sscanf(line, "boardCount %d", &value) == 1) {
             game->board.count = value;
+        }
+        else if (sscanf(line, "nextRoundPlayers %d", &value) == 1) {
+            game->nextRoundPlayers = value;
         } else if (strncmp(line, "board", 5) == 0 && (line[5] == ' ' || line[5] == '\0')) {
             const char* cursor = line + 5;
             int idx = 0;

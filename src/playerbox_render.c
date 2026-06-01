@@ -91,6 +91,7 @@ void drawPlayerInfoBox(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, Pl
     const char* playerName = playerInfo->name;
     Icon* avatarImg = playerInfo->avatarImg;
     Card* playerCards = playerInfo->playerCards;
+    GameState* gameState = getGameState(pokerGui);
 
     //loading heights and width
     double boxHeight = getPlayerBoxHeight(drawArea);
@@ -146,14 +147,19 @@ void drawPlayerInfoBox(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, Pl
     moneyBuilder(chipCount, playerInfo->chips);
     drawText(cr, CHIP_COUNT_TEXT_COLOR, chipCount, chipTextFontSize, chipTextXPos, chipTextYPos); 
 
+    double cardsTotalW = MAX_PLAYER_CARDS * cardW + (MAX_PLAYER_CARDS - 1) * getCardGap(drawArea);
+    double cardYPos = getCenter(yPos + borderWidth, yPos + boxHeight - borderWidth) - (cardH/2.0); //center --> make helper function
+    double cardXPos = xPos + boxWidth - cardsTotalW - sidePadding;  //card width //double cardsTotalW = MAX_PLAYER_CARDS * cardW + (MAX_PLAYER_CARDS - 1) * cardGap;
+    Round round = getRound(gameState); 
+
     //add the cards -
-    if(currPlayer){
-        double cardsTotalW = MAX_PLAYER_CARDS * cardW + (MAX_PLAYER_CARDS - 1) * getCardGap(drawArea);
-        double cardYPos = getCenter(yPos + borderWidth, yPos + boxHeight - borderWidth) - (cardH/2.0); //center --> make helper function
-        double cardXPos = xPos + boxWidth - cardsTotalW - sidePadding;  //card width //double cardsTotalW = MAX_PLAYER_CARDS * cardW + (MAX_PLAYER_CARDS - 1) * cardGap;
+    if(currPlayer || round == ROUND_SHOWDOWN){
         drawCards(cr, images, MAX_PLAYER_CARDS, playerCards, cardW, cardH, cardXPos, cardYPos); 
     }
-   
+    else{
+        drawCards(cr, images, MAX_PLAYER_CARDS, NULL, cardW, cardH, cardXPos, cardYPos);
+    }
+
     cairo_restore(cr);
 }
 

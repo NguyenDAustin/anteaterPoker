@@ -680,17 +680,6 @@ void intializePlayerSeats(GtkWidget* pokerTable, Seat_Info* seats){
     seats[PLAYER_6] = getPlayer6Seat(pokerTable); 
 }
 
-void updatePlayersInfo(Poker_Gui* pokerGui, int* chips, Card** playerCards){
-    printf("updating players info\n");
-    GameState* gameState = getGameState(pokerGui);
-    int joinedPlayers = getJoinedPlayers(gameState); 
-
-    for(int i = 0; i < joinedPlayers; i++){ 
-        setPlayerChipCount(gameState, i, chips[i]); 
-        setPlayerCards(gameState, i, playerCards[i]);
-    }
-}
-
 gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //in future game state will be read from user data!!
     Poker_Gui* pokerGui = (Poker_Gui*)user_data; 
     Icon** images = pokerGui->images;  
@@ -700,12 +689,8 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
 
     parseGameStateMessage(pokerGui->stateMsg, gameState);  //this should update game state properly
 
-    
-    //for testing purpose 
     int joinedPlayers = getJoinedPlayers(gameState); 
     Card* dealerCards = getDealerCards(gameState); 
-
-   
     int areaWidth = gtk_widget_get_allocated_width(widget);
     int areaHeight = gtk_widget_get_allocated_height(widget);
     drawTableOutline(cr, areaWidth, areaHeight);
@@ -714,6 +699,7 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
 
     //drawing pot
 
+    gtk_widget_hide(pokerGui->nextRoundButton);
     Round round = getRound(gameState); 
     int cardsToDeal; 
 
@@ -728,6 +714,16 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
     }
     else if(round == ROUND_RIVER){
         cardsToDeal = 5; 
+    }
+    else if(round == ROUND_SHOWDOWN){ // draw a button to wait until next round 
+        cardsToDeal = 5; 
+        const char* message[100]; 
+        snprintf(message, sizeof(message), "%d - PLAYERS READY FOR NEXT ROUND", gameState->nextRoundPlayers); 
+        double fontSize = areaHeight*0.03; 
+        double xPos = getCenter(0, areaWidth) - getTextWidth(cr, PIXEL_FONT, message,fontSize)/2.0; 
+        double yPos = areaHeight * 0.1; 
+        drawText(cr, PLAYER_TEXT_COLOR, message, fontSize, xPos, yPos); 
+        gtk_widget_show(pokerGui->nextRoundButton); 
     }
     else{
         cardsToDeal = 0; 
@@ -753,7 +749,6 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
 
     int currentPlayerIndex = getCurrentPlayerIndex(gameState); 
 
-    printf("CURRENT player index: %d!!!\n", currentPlayerIndex); 
     drawTurnHighlight(cr, widget, pokerGui, seats[currentPlayerIndex].xPos, seats[currentPlayerIndex].yPos); //what about to remove highlight ?
     
     printf("finished drawing poker table\n");

@@ -24,8 +24,9 @@ typedef struct {
 
 typedef struct GameState {
 	//Player_Info players[MAX_PLAYERS_COUNT]; 
-    Player_Info** players; //changing to double pointer
+    Player_Info** players; //changing to double pointer 
 
+    int nextRoundPlayers; //number of players who want to start the next round
 	int numPlayers;
     int dealerIndex;
     Deck* deck; //change to pointer - queency
