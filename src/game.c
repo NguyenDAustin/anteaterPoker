@@ -5,11 +5,13 @@
 #include "deck.h"
 #include "hand.h"
 
+// Checks that a player index points to a currently joined player.
 static bool isValidPlayerIndex(const GameState *game, int playerIndex)
 {
     return game && playerIndex >= 0 && playerIndex < game->numPlayers;
 }
 
+// Returns true when the player is still eligible to win the current hand.
 static bool isPlayerInHand(const GameState *game, int playerIndex)
 {
     if (!isValidPlayerIndex(game, playerIndex)) {
@@ -20,6 +22,7 @@ static bool isPlayerInHand(const GameState *game, int playerIndex)
     return !player->hasFolded && player->chips >= 0;
 }
 
+// Returns true when a player is active, has chips, and may take an action.
 static bool canGamePlayerAct(const GameState *game, int playerIndex)
 {
     // LOBBY_WIRING: renamed to avoid colliding with player.h's canPlayerAct.
@@ -27,6 +30,7 @@ static bool canGamePlayerAct(const GameState *game, int playerIndex)
     return isPlayerInHand(game, playerIndex) && player->canAct && player->chips > 0;
 }
 
+// Counts players who have not folded and are still in the current hand.
 static int countPlayersInHand(const GameState *game)
 {
     if (!game) {
@@ -43,6 +47,7 @@ static int countPlayersInHand(const GameState *game)
     return count;
 }
 
+// Finds the next player still in the hand after the given starting index.
 static int nextPlayerFrom(const GameState *game, int startIndex)
 {
     if (!game || game->numPlayers <= 0) {
@@ -59,6 +64,7 @@ static int nextPlayerFrom(const GameState *game, int startIndex)
     return -1;
 }
 
+// Finds the next player who can currently act after the given starting index.
 static int nextActingPlayerFrom(const GameState *game, int startIndex)
 {
     if (!game || game->numPlayers <= 0) {
@@ -75,6 +81,7 @@ static int nextActingPlayerFrom(const GameState *game, int startIndex)
     return -1;
 }
 
+// Moves chips from a player into the pot, capped by the player's chip count.
 static int payChips(GameState *game, Player_Info *player, int amount)
 {
     printf("paying chips\n"); 
@@ -100,6 +107,7 @@ static int payChips(GameState *game, Player_Info *player, int amount)
     return paid;
 }
 
+// Clears per-player bets and resets the betting-turn counter for a new street.
 static void clearBets(GameState *game)
 {
     if (!game) {
@@ -116,6 +124,7 @@ static void clearBets(GameState *game)
     }
 }
 
+// Charges one blind from a player and updates the table's current bet.
 static void postBlind(GameState *game, int playerIndex, int amount)
 {
     if (!isValidPlayerIndex(game, playerIndex) || amount <= 0) {
@@ -141,6 +150,7 @@ static void setPlayerCards(Player_Info *player, Card first, Card second)
 }
 */
 
+// Deals two private hole cards to each active player.
 static void dealHoleCardsToActivePlayers(GameState *game)
 {
     for (int card = 0; card < 2; card++) {
@@ -154,6 +164,7 @@ static void dealHoleCardsToActivePlayers(GameState *game)
     }
 }
 
+// Deals one community card onto the board if space remains.
 static void dealBoardCard(GameState *game)
 {
     if (!game || game->board.count >= MAX_DEALER_CARDS) {
@@ -163,6 +174,7 @@ static void dealBoardCard(GameState *game)
     setDealerCard(game, game->board.count, deal(game->deck));
 }
 
+// Resets round state, rotates dealer/blinds, deals cards, and starts pre-flop.
 void startNewRound(GameState *game)
 {
     printf("starting new round\n");
@@ -226,6 +238,7 @@ void startNewRound(GameState *game)
     printf("finished starting new round\n");
 }
 
+// Deals community cards needed for the current round: flop, turn, or river.
 void dealCommunityCards(GameState *game)
 {
     if (!game) {
@@ -255,6 +268,7 @@ void dealCommunityCards(GameState *game)
     }
 }
 
+// Validates and applies a player's poker action, then advances turn/round state.
 GameActionResult handlePlayerAction(GameState *game, int playerIndex, PlayerAction action)
 {
     if (!game) {
@@ -336,6 +350,7 @@ GameActionResult handlePlayerAction(GameState *game, int playerIndex, PlayerActi
     return GAME_ACTION_SUCCESS;
 }
 
+// Returns true once every active player has matched the bet or acted.
 bool isBettingPhaseComplete(const GameState *game)
 {
     if (!game || countPlayersInHand(game) <= 1) {
@@ -358,6 +373,7 @@ bool isBettingPhaseComplete(const GameState *game)
     return game->turnNumber >= playersWhoCanAct;
 }
 
+// Returns true when the hand should end because one player remains or showdown is reached.
 bool shouldEndRound(const GameState *game)
 {
     if (!game) {
@@ -367,6 +383,7 @@ bool shouldEndRound(const GameState *game)
     return countPlayersInHand(game) <= 1 || game->round == ROUND_SHOWDOWN;
 }
 
+// Moves from one betting round to the next, or resolves the hand after the river.
 void advanceGameRound(GameState *game)
 {
     if (!game) {
@@ -393,6 +410,7 @@ void advanceGameRound(GameState *game)
     }
 }
 
+// Evaluates active players and returns the index of the current winner.
 int determineWinner(const GameState *game)
 {
     if (!game) {
@@ -436,6 +454,7 @@ int determineWinner(const GameState *game)
     return winner;
 }
 
+// Transfers the pot to the winning player and clears the pot.
 void awardPotToWinner(GameState *game, int winnerIndex)
 {
     if (!isValidPlayerIndex(game, winnerIndex) || game->pot <= 0) {

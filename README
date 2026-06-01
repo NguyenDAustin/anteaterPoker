@@ -1,0 +1,81 @@
+ANTEATER POKER
+==============
+
+Anteater Poker is an online Texas Hold'em variant for Linux. A server hosts
+the table and players connect as clients. The game includes the Anteater card:
+in a player's hand it acts as a wildcard, while on the board it replaces the
+community cards and advances the game to the final round.
+
+BUILD
+-----
+
+Run:
+
+    make
+
+The compiled programs are:
+
+    bin/poker_server
+    bin/poker_client
+
+The graphical client requires GTK+ 3 and Fontconfig development packages.
+
+RUNNING A GAME
+--------------
+
+Start the server in one terminal:
+
+    make run-server
+
+Start each client in another terminal:
+
+    make run-client
+
+The default host and port are configured in the Makefile. To override them:
+
+    make run-server PORT=10215
+    make run-client HOST=localhost PORT=10215
+
+The server must be reachable from each client machine. The first player can
+start the game after players join; remaining seats are filled by bots.
+
+When using the precompiled customer package, start the programs directly:
+
+    ./bin/poker_server 10215
+    ./bin/poker_client localhost 10215
+
+More information about the game rules is in Poker_UserManual.pdf. The source
+archive places this manual at doc/Poker_UserManual.pdf.
+
+TESTING
+-------
+
+Run the communication smoke test:
+
+    make test_comm
+
+The following targets build and launch each application for interactive
+testing:
+
+    make test_server
+    make test_client
+
+Create the compressed source package:
+
+    make tar
+
+This generates Poker_Beta_src.tar.gz.
+
+Create the customer package:
+
+    make customer_tar
+
+This generates Poker_Beta.tar.gz with the documentation, resources, compiled
+server, and graphical client executable.
+
+CLEANUP
+-------
+
+Remove generated executables with:
+
+    make clean
