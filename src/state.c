@@ -347,6 +347,7 @@ void initGameState(GameState *game)
     game->currentBet = 0;
     game->round = ROUND_PRE_FLOP;
     game->board.count = 0;
+    game->nextRoundPlayers = 0;
 
 
     for (int i = 0; i < MAX_DEALER_CARDS; i++) {
@@ -362,6 +363,7 @@ void initGameState(GameState *game)
         game->players[i]->canAct = true; //true it has to be active right ???
         game->players[i]->playerCards[0] = empty_card(); 
         game->players[i]->playerCards[1] = empty_card();
+        game->players[i]->isReady = false;
     }
 
      printf("finished initializing game state!\n"); 

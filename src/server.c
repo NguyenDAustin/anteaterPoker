@@ -144,11 +144,24 @@ void readMessage(int* clientSockets, int joinedPlayers, int playerIndex, GameSta
 
     if(strncmp(buffer, "NEXT_ROUND", 10) == 0){
         printf("Player %d requested next round\n", playerIndex + 1);
-        game->nextRoundPlayers = game->nextRoundPlayers + 1; 
-        
-        if(getRound(game) == ROUND_SHOWDOWN && game->nextRoundPlayers == joinedPlayers){  //is showdown and all players requested next round
-            game->nextRoundPlayers = 0; 
-            startNewRound(game); 
+
+        if (getRound(game) == ROUND_SHOWDOWN) {
+            Player_Info* player = game->players[playerIndex];
+            if (!player->isReady) {
+                game->nextRoundPlayers++;
+                setReadyStatus(player, true);
+            }
+
+            printf("next round players: %d\n", game->nextRoundPlayers);
+
+            if(game->nextRoundPlayers == joinedPlayers){  //all players requested next round
+                game->nextRoundPlayers = 0;
+                for(int i = 0; i < game->numPlayers; i++){
+                    setReadyStatus(game->players[i], false); 
+                }
+
+                startNewRound(game); 
+            }
         }
     }
     else if (parsePlayerNameMessage(buffer, playerName, sizeof(playerName))) {

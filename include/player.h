@@ -26,10 +26,8 @@ typedef struct Player_Info
     int currentBet;
     PlayerType type;
     bool canAct;
-    bool hasFolded; 
-
-    //add a boolean for is player ready for next round
-
+    bool hasFolded;
+    bool isReady; 
 
 } Player_Info;
 
@@ -55,7 +53,8 @@ typedef struct
 const char* getName(const Player_Info* playerInfo); 
 int getChipCount(const Player_Info* playerInfo); 
 Icon* getAvatar(const Player_Info* playerInfo); 
-Card* getCards(Player_Info* playerInfo); 
+Card* getCards(const Player_Info* playerInfo);
+bool getReadyStatus(const Player_Info* playerInfo); 
 
 //SETTER FUNCTIONS FOR PLAYER INFO - NO PLAYER NUM GIVEN
 void setName(Player_Info *player, const char *name);
@@ -65,6 +64,7 @@ void setBetSize(Player_Info *player, int betSize);
 void setPlayerType(Player_Info *player, PlayerType type);
 void setAvatar(Player_Info *player, Icon *avatarImg);
 void setCards(Player_Info* player, Card* playerCards);
+void setReadyStatus(Player_Info* player, bool isReady);
 
 // start of program
 void initPlayer(Player_Info *player, const char *name, int seat, int chips, PlayerType type);

@@ -458,10 +458,14 @@ void onCallClicked(GtkWidget *button, gpointer user_data)
 
 void onNextRoundClicked(GtkWidget *button, gpointer user_data){
     Poker_Gui* pokerGui = user_data; 
-    int socket =  getSocket(pokerGui); 
+    int socket =  getSocket(pokerGui);
 
     if(sendMessage(socket, "NEXT_ROUND\n") < 0) 
         printf("ERROR: was not able to send call message\n");
+
+
+    Player_Info* player = getPlayerInfo(getGameState(pokerGui), pokerGui->playerNum - 1);
+    setReadyStatus(player, true);
 }
 
 static void updateLobbyGui(Lobby_Gui *lobbyGui, const LobbyState *lobbyState)

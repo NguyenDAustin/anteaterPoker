@@ -28,6 +28,7 @@ void initPlayer(Player_Info *player, const char *name, int seat, int chips, Play
     player->canAct = chips > 0; //can act in the current hand if they have chips
     player->hasFolded = false;
     player->avatarImg = NULL;
+    player->isReady = false;
 
     player->playerCards[0] = empty_card();
     player->playerCards[1] = empty_card();
@@ -283,4 +284,20 @@ void resetBetSize(Player_Info *player)
     }
 
     player->betSize = 0;
+}
+
+bool getReadyStatus(const Player_Info* player){
+    if(!player){
+        printf("ERROR: player is NULL cannot get ready status\n");
+        return false; 
+    }
+    return player->isReady; 
+}
+
+void setReadyStatus(Player_Info* player, bool isReady){
+    if(!player){
+        printf("ERROR: player is NULL cannot set ready status\n");
+        return; 
+    }
+    player->isReady = isReady; 
 }

@@ -717,7 +717,7 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
     }
     else if(round == ROUND_SHOWDOWN){ // draw a button to wait until next round 
         cardsToDeal = 5; 
-        const char* message[100]; 
+        char message[100]; 
         snprintf(message, sizeof(message), "%d - PLAYERS READY FOR NEXT ROUND", gameState->nextRoundPlayers); 
         double fontSize = areaHeight*0.03; 
         double xPos = getCenter(0, areaWidth) - getTextWidth(cr, PIXEL_FONT, message,fontSize)/2.0; 
