@@ -734,6 +734,8 @@ static gboolean onServerMessage(GIOChannel *channel, GIOCondition condition, gpo
 
         GameState *gameState = getGameState(pokerGui);
 
+        Round oldRound = gameState->round;
+
         bool parsed = parseGameStateMessage(buffer, gameState);
 
         printf("parsed = %d, pot = %d, numPlayers = %d\n",
@@ -752,6 +754,10 @@ static gboolean onServerMessage(GIOChannel *channel, GIOCondition condition, gpo
         }
 
         if (parsed) {
+            if (oldRound == ROUND_SHOWDOWN && gameState->round == ROUND_PRE_FLOP){
+                reset_timer(pokerGui->timer);
+            }
+
             pokerGui->stateMsg = buffer; 
             gtk_widget_queue_draw(getPokerTable(pokerGui));
         }
@@ -827,9 +833,9 @@ void create_poker_gui(GtkApplication *app, gpointer user_data)
     GtkWidget *timerLabel = gtk_label_new("Time: 0");
     gtk_box_pack_start(GTK_BOX(mainBox), timerLabel, FALSE, FALSE, 5);
     setStyle(timerLabel, LOBBY_LABEL_CSS);
-    Timer *timer = g_malloc(sizeof(Timer));
-    timer->label = timerLabel;
-    start_timer(timer);
+    pokerGui->timer = g_malloc(sizeof(Timer));
+    pokerGui->timer->label = timerLabel;
+    start_timer(pokerGui->timer);
 
     // creating poker table
     pokerGui->pokerTable = createPokerTable(pokerGui);

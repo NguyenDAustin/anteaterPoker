@@ -8,6 +8,7 @@
 #include "enums.h"
 #include "state.h"
 #include "communication_bundle.h"
+#include "timer.h"
 
 extern const char *TITLE;
 extern const char *CSS;
@@ -37,6 +38,10 @@ typedef struct Poker_Gui
     int socket;
     int playerNum; 
     const char* stateMsg; 
+
+    //timer stuff
+    Timer *timer;
+
 } Poker_Gui;
 
 

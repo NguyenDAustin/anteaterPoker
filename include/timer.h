@@ -9,7 +9,7 @@ typedef struct {
 } Timer;
 
 void start_timer(Timer *timer);
-
+void reset_timer(Timer *timer);
 gboolean update_timer(gpointer data);
 
 #endif

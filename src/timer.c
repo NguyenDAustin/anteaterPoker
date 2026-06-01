@@ -24,3 +24,14 @@ void start_timer(Timer *timer)
 
     g_timeout_add_seconds(1, update_timer, timer); //increment up
 }
+
+
+void reset_timer(Timer *timer)
+{
+    timer->time = 0;
+
+    gtk_label_set_text(
+        GTK_LABEL(timer->label),
+        "Time: 0"
+    );
+}
