@@ -11,6 +11,7 @@
 #include <signal.h>
 
 #include "communication.h"
+#include "bot.h"
 #include "game.h"
 #include "lobby.h"
 #include "player.h"
@@ -21,6 +22,36 @@
 
 #define SERVER_MAX_PLAYERS 6//the max amount of clients the server will allow to connect
 #define STARTING_CHIPS 1000
+
+static void playBotTurns(GameState *game)
+{
+    int safetyCounter = 0;
+
+    if (!game) {
+        return;
+    }
+
+    while (game->round != ROUND_SHOWDOWN &&
+           game->currentPlayerIndex >= 0 &&
+           game->currentPlayerIndex < game->numPlayers &&
+           safetyCounter < SERVER_MAX_PLAYERS * 20) {
+        int botIndex = game->currentPlayerIndex;
+        Player_Info *player = game->players[botIndex];
+
+        if (!player || player->type != BOT_PLAYER) {
+            break;
+        }
+
+        PlayerAction action = getBotAction(game, botIndex);
+        GameActionResult result = handlePlayerAction(game, botIndex, action);
+
+        if (result != GAME_ACTION_SUCCESS && result != GAME_ACTION_ROUND_COMPLETE) {
+            break;
+        }
+
+        safetyCounter++;
+    }
+}
 
 void error(const char *msg)
 {
@@ -161,6 +192,7 @@ void readMessage(int* clientSockets, int joinedPlayers, int playerIndex, GameSta
                 }
 
                 startNewRound(game); 
+                playBotTurns(game);
             }
         }
     }
@@ -178,6 +210,7 @@ void readMessage(int* clientSockets, int joinedPlayers, int playerIndex, GameSta
         printf("Player action: %s amount=%d\n", pokerActionTypeToString(action.type), action.amount);
         PlayerAction playerAction = {.actionType = action.type, .amount = action.amount}; 
         handlePlayerAction(game, playerIndex, playerAction); //added here
+        playBotTurns(game);
     } else {
         printf("Unknown client message: %s\n", buffer);
         n = sendMessage(clientSocket, "Unknown message\n");
@@ -271,6 +304,15 @@ void lobby(int serverSocket, int* clientSockets)
                 if (!gameStarted) {
                     bool startedNow = handleLobbyClientMessage(clientSockets, joinedPlayers, i, game, &gameStarted);
 
+                    if (startedNow) {
+                        playBotTurns(game);
+
+                        char buffer[4096];
+                        if (formatFullGameState(buffer, sizeof(buffer), game)) {
+                            broadcastToAll(clientSockets, joinedPlayers, buffer);
+                        }
+                    }
+
                     if (!startedNow) {
                         broadcastLobbyStateToClients(clientSockets, joinedPlayers, game, SERVER_MAX_PLAYERS);
                     }
@@ -279,6 +321,7 @@ void lobby(int serverSocket, int* clientSockets)
                 }
 
                 readMessage(clientSockets, joinedPlayers, i, game);
+                playBotTurns(game);
 
                 char buffer[4096];
                 if (formatFullGameState(buffer, sizeof(buffer), game)) {
