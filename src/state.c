@@ -359,6 +359,7 @@ void initGameState(GameState *game)
         game->players[i]->chips = 0;
         game->players[i]->betSize = 0;
         game->players[i]->currentBet = 0;
+        game->players[i]->raisesThisRound = 0;
         game->players[i]->hasFolded = false;
         game->players[i]->canAct = true; //true it has to be active right ???
         game->players[i]->playerCards[0] = empty_card(); 
@@ -386,6 +387,7 @@ void resetGameState(GameState *game)
         player->canAct = true;
         player->currentBet = 0;
         player->betSize = 0;
+        player->raisesThisRound = 0;
         player->playerCards[0] = empty_card(); 
         player->playerCards[1] = empty_card();
     }

@@ -24,6 +24,7 @@ typedef struct Player_Info
     Icon *avatarImg;
     int betSize;
     int currentBet;
+    int raisesThisRound;
     PlayerType type;
     bool canAct;
     bool hasFolded;

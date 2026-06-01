@@ -24,6 +24,7 @@ void initPlayer(Player_Info *player, const char *name, int seat, int chips, Play
     player->chips = chips;
     player->betSize = 0;
     player->currentBet = 0;
+    player->raisesThisRound = 0;
     player->type = type;
     player->canAct = chips > 0; //can act in the current hand if they have chips
     player->hasFolded = false;
@@ -55,6 +56,7 @@ void resetPlayer(Player_Info *player)
     //player->playerCards = NULL; //reset this way
     player->betSize = 0;
     player->currentBet = 0;
+    player->raisesThisRound = 0;
     player->canAct = player->chips > 0;
     player->hasFolded = false;
 }
@@ -284,6 +286,7 @@ void resetBetSize(Player_Info *player)
     }
 
     player->betSize = 0;
+    player->raisesThisRound = 0;
 }
 
 bool getReadyStatus(const Player_Info* player){

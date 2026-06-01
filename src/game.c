@@ -112,6 +112,7 @@ static void clearBets(GameState *game)
     for (int i = 0; i < game->numPlayers; i++) {
         game->players[i]->currentBet = 0;
         game->players[i]->betSize = 0;
+        game->players[i]->raisesThisRound = 0;
     }
 }
 
@@ -293,6 +294,7 @@ GameActionResult handlePlayerAction(GameState *game, int playerIndex, PlayerActi
         }
         payChips(game, player, action.amount);
         game->currentBet = player->currentBet;
+        player->raisesThisRound++;
         game->turnNumber = 1;
         break;
     case RAISE:
@@ -309,6 +311,7 @@ GameActionResult handlePlayerAction(GameState *game, int playerIndex, PlayerActi
 
         payChips(game, player, totalPayment);
         game->currentBet = player->currentBet;
+        player->raisesThisRound++;
         game->turnNumber = 1;
         break;
     }

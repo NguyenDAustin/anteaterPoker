@@ -1,6 +1,12 @@
 #include "bot.h"
 #include "hand.h"
+#include "monte_carlo.h"
 #include <stdlib.h>
+
+#define BOT_MONTE_CARLO_SIMULATIONS 500
+#define BOT_RAISE_EQUITY 0.70
+#define BOT_BET_EQUITY 0.62
+#define BOT_CALL_MARGIN 0.08
 
 void initBot(Player_Info *bot, const char *name, int seat, int chips)
 {
@@ -196,13 +202,18 @@ int calculateBotRaiseAmount(GameState *game, int playerIndex)
     if (bot == NULL || bot->chips <= 0)
         return 0;
 
+    int callCost = calculateCallCost(game, playerIndex);
+    int availableRaiseChips = bot->chips - callCost;
+    if (availableRaiseChips <= 0)
+        return 0;
+
     int raiseAmount = game->pot / 2;
 
     if (raiseAmount < game->bigBlind)
         raiseAmount = game->bigBlind;
 
-    if (raiseAmount > bot->chips)
-        raiseAmount = bot->chips;
+    if (raiseAmount > availableRaiseChips)
+        raiseAmount = availableRaiseChips;
 
     return raiseAmount;
 }
@@ -245,19 +256,34 @@ PlayerAction getBotPreFlopAction(GameState *game, int playerIndex)
 {
     Player_Info *bot = game->players[playerIndex];
     int score = evalPreFlop(bot->playerCards);
-    int callAmount = game->currentBet - bot->currentBet;
+    int callAmount = calculateCallCost(game, playerIndex);
+    bool canRaiseAgain = bot->raisesThisRound == 0;
 
     if (callAmount <= 0)
     {
-        if (score >= 8)
-            return (PlayerAction) {RAISE, 0.05 * bot->chips};
-        else
-            return (PlayerAction) {CHECK, 0};
+        if (score >= 8 && canRaiseAgain) {
+            int raiseAmount = bot->chips / 20;
+            if (raiseAmount < game->bigBlind)
+                raiseAmount = game->bigBlind;
+            if (raiseAmount > bot->chips)
+                raiseAmount = bot->chips;
+
+            if (raiseAmount > 0)
+                return (PlayerAction) {RAISE, raiseAmount};
+        }
+
+        return (PlayerAction) {CHECK, 0};
     }
 
     if (score >= 10)
     {
-        return (PlayerAction) {RAISE, callAmount};
+        if (canRaiseAgain) {
+            int raiseAmount = calculateBotRaiseAmount(game, playerIndex);
+            if (raiseAmount > 0)
+                return (PlayerAction) {RAISE, raiseAmount};
+        }
+
+        return (PlayerAction) {CALL, callAmount};
     }
     else if (score >= 7)
     {
@@ -275,28 +301,30 @@ PlayerAction getBotPreFlopAction(GameState *game, int playerIndex)
 
 PlayerAction getBotPostFlopAction(GameState *game, int playerIndex)
 {
-    int strength = evalPostFlop(game, playerIndex);
+    Player_Info *bot = game->players[playerIndex];
     int callCost = calculateCallCost(game, playerIndex);
+    bool canRaiseAgain = bot->raisesThisRound == 0;
+    double equity = estimateBotEquity(game, playerIndex, BOT_MONTE_CARLO_SIMULATIONS);
+    double callPrice = calculateCallPrice(game, playerIndex);
 
     if (callCost == 0) {
-        if (strength >= 4) {
-            return (PlayerAction){RAISE, calculateBotRaiseAmount(game, playerIndex)};
+        if (equity >= BOT_BET_EQUITY && canRaiseAgain) {
+            int raiseAmount = calculateBotRaiseAmount(game, playerIndex);
+            if (raiseAmount > 0)
+                return (PlayerAction){RAISE, raiseAmount};
         }
 
         return (PlayerAction){CHECK, 0};
     }
 
-    if (strength >= 5) {
-        return (PlayerAction){RAISE, calculateBotRaiseAmount(game, playerIndex)};
+    if (equity >= BOT_RAISE_EQUITY && canRaiseAgain) {
+        int raiseAmount = calculateBotRaiseAmount(game, playerIndex);
+        if (raiseAmount > 0)
+            return (PlayerAction){RAISE, raiseAmount};
     }
 
-    if (strength >= 2) {
+    if (equity >= callPrice + BOT_CALL_MARGIN)
         return (PlayerAction){CALL, callCost};
-    }
-
-    if (strength >= 1 && callCost <= game->bigBlind) {
-        return (PlayerAction){CALL, callCost};
-    }
 
     return (PlayerAction){FOLD, 0};
 }
