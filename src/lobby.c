@@ -8,8 +8,11 @@
 #include <unistd.h>
 
 #include "communication.h"
+#include "bot.h"
 #include "game.h"
 #include "poker_protocol.h"
+
+#define BOT_STARTING_CHIPS 1000
 
 static bool startsWithMessage(const char *message, const char *prefix)
 {
@@ -130,7 +133,23 @@ bool formatLobbyStartRequest(char *buffer, size_t bufferSize)
 
 bool canStartLobbyGame(int joinedPlayers)
 {
-    return joinedPlayers >= LOBBY_MIN_PLAYERS;
+    return joinedPlayers >= 1;
+}
+
+static void fillEmptySeatsWithBots(GameState *game, int maxPlayers)
+{
+    if (!game) {
+        return;
+    }
+
+    while (game->numPlayers < maxPlayers && game->numPlayers < MAX_PLAYERS_COUNT) {
+        int seat = game->numPlayers;
+        char botName[20];
+
+        snprintf(botName, sizeof(botName), "Bot%d", seat + 1);
+        initBot(game->players[seat], botName, seat, BOT_STARTING_CHIPS);
+        game->numPlayers++;
+    }
 }
 
 static void sanitizeLobbyPlayerName(char *playerName)
@@ -216,6 +235,7 @@ bool handleLobbyClientMessage(int *clientSockets, int joinedPlayers, int playerI
     }
 
     printf("Player 1 started the game from the lobby.\n");
+    fillEmptySeatsWithBots(game, MAX_PLAYERS_COUNT);
     startNewRound(game);
     *gameStarted = true;
 

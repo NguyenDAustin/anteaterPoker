@@ -9,7 +9,7 @@
 #define LOBBY_MESSAGE_SIZE 1024
 #define LOBBY_START_REQUEST "START_REQUEST"
 #define LOBBY_START_GAME "START_GAME"
-#define LOBBY_MIN_PLAYERS 2
+#define LOBBY_MIN_PLAYERS 1
 
 typedef struct {
     int joinedPlayers;
