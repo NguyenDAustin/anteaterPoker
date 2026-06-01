@@ -125,7 +125,7 @@ Icon *getAvatar(const Player_Info *player)
     return player->avatarImg;
 }
 
-Card *getCards(Player_Info *player)
+Card *getCards(const Player_Info *player)
 {
     if (!player)
     {
