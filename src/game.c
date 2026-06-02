@@ -203,7 +203,7 @@ void startNewRound(GameState *game)
 
     for (int i = 0; i < numPlayers; i++) {
         Player_Info *player = getPlayerInfo(game, i); 
-        player->hasFolded = false;
+        player->hasFolded = player->chips <= 0;
         player->canAct = player->chips > 0;
         player->playerCards[0] = empty_card(); 
         player->playerCards[1] = empty_card(); 

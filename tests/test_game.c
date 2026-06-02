@@ -42,6 +42,22 @@ int main(void)
     CHECK(res == GAME_ACTION_SUCCESS || res == GAME_ACTION_ROUND_COMPLETE,
           "fold should succeed or end the round");
 
+    GameState bustedGame;
+    initGameState(&bustedGame);
+
+    initPlayer(bustedGame.players[0], "Alice", 0, 1000, HUMAN_PLAYER);
+    initPlayer(bustedGame.players[1], "Bob",   1,    0, HUMAN_PLAYER);
+    initPlayer(bustedGame.players[2], "Carol", 2, 1000, HUMAN_PLAYER);
+    bustedGame.numPlayers = 3;
+    bustedGame.dealerIndex = 0;
+
+    startNewRound(&bustedGame);
+    CHECK(bustedGame.players[1]->hasFolded, "busted player should be out of the next hand");
+    CHECK(!bustedGame.players[1]->canAct, "busted player should not be able to act");
+    CHECK(bustedGame.players[1]->playerCards[0].rank < 0,
+          "busted player should not receive hole cards");
+    CHECK(bustedGame.dealerIndex == 2, "dealer rotation should skip busted players");
+
     printf("game test passed\n");
     return 0;
 }
