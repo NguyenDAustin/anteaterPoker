@@ -245,15 +245,6 @@ bool handleLobbyClientMessage(int *clientSockets, int joinedPlayers, int playerI
         }
     }
 
-    char stateMessage[GAME_STATE_MESSAGE_SIZE];
-    if (formatFullGameState(stateMessage, sizeof(stateMessage), game)) {
-        for (int i = 0; i < joinedPlayers; i++) {
-            if (clientSockets[i] >= 0) {
-                sendMessage(clientSockets[i], stateMessage);
-            }
-        }
-    }
-
     return true;
 }
 
