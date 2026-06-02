@@ -33,6 +33,8 @@ const char *CSS =
 
     ".slider-bg{"
     "   background-color: rgba(19, 21, 28, 0.6);"
+    "   padding-right: 20px;"
+    "   padding-left: 20px;"
     "   font-family: 'VT323';"
     "   color: rgb(205,193,176);"
     "   font-weight: bold;"
@@ -846,18 +848,6 @@ void create_poker_gui(GtkApplication *app, gpointer user_data)
     gtk_box_pack_start(GTK_BOX(mainBox), buttonBox, FALSE, FALSE, 0);
     gtk_widget_set_halign(buttonBox, GTK_ALIGN_CENTER);
     gtk_widget_set_margin_bottom(buttonBox, 25);
-
-    
-    //creating next round button - only shown during showdown
-    /*
-    GtkWidget* nextRound = gtk_button_new_with_label("NEXT ROUND"); 
-    gtk_box_pack_start(GTK_BOX(buttonBox), nextRound, FALSE, FALSE, 0); 
-    gtk_widget_set_size_request(nextRound, BUTTON_WIDTH, BUTTON_HEIGHT);
-    setStyle(nextRound, BUTTON_CSS);
-    g_signal_connect(nextRound, "clicked", G_CALLBACK(onNextRoundClicked), pokerGui);
-    pokerGui->nextRoundButton = nextRound; 
-    */
-
 
     // creating fold button
     GtkWidget *foldButton = gtk_button_new_with_label("FOLD");
