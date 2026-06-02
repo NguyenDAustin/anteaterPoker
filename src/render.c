@@ -161,11 +161,7 @@ void createImages(Icon** imgs, const char** resources, int numOfImgs){
     }  
 }
 
-
-
 void createCardImages(Icon** imgs, int numOfImgs){
-    //uploading the back of card - temp manual solu 
-    //imgs[BACK_CARD_INDEX] = imageToSurface(CARDS_RESOURCES[BACK_CARD_INDEX]); //currently at 52 but change when we add anteater card to 57
     createImages(imgs, CARDS_RESOURCES, numOfImgs);
 }
 
@@ -350,99 +346,6 @@ double getTableHorizontalPadding(GtkWidget* pokerTable){
     return (tableW * 0.3); 
 }
 
-void drawPlayer1Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards)
-{ 
-    double tableLeft = getTableLeftEdge(pokerTable);
-    double tableBot = getTableBotEdge(pokerTable);
-    double tableW = getTableWidth(pokerTable);
-    double tableH = getTableHeight(pokerTable);
-
-    double xCenter = tableLeft + getTableHorizontalPadding(pokerTable);
-    double y = tableBot - getTableVerticalPadding(pokerTable); 
-
-    Seat_Info player1 = {xCenter, y};
-    drawCards(cr, images, MAX_PLAYER_CARDS, playerCards, getCardWidth(pokerTable), getCardHeight(pokerTable), xCenter, y); 
-
-    //drawPlayerCards(cr, pokerTable, images, playerCards, &player1); 
-}
-
-void drawPlayer2Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards)
-{ 
-    //double tableLeft = getTableLeftEdge(pokerTable);
-    double tableRight = getTableRightEdge(pokerTable); 
-    double tableBot = getTableBotEdge(pokerTable);
-    double tableW = getTableWidth(pokerTable);
-    double tableH = getTableHeight(pokerTable);
-
-    //double xCenter = tableLeft + tableW * 0.70;
-    double xCenter = tableRight - getTableHorizontalPadding(pokerTable); 
-    double y = tableBot - getTableVerticalPadding(pokerTable);
-
-    Seat_Info player2 = {xCenter, y};  
-    drawPlayerCards(cr, pokerTable, images, playerCards, &player2); 
-}
-
-void drawPlayer3Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards)
-{ 
-    double tableRight = getTableRightEdge(pokerTable);
-    double tableTop = getTableTopEdge(pokerTable);
-    double tableH = getTableHeight(pokerTable);
-
-    double xCenter = tableRight - getCardGroupWidth(pokerTable, 2) / 2.0 + 25;
-    double y = tableTop + tableH * 0.50 - getCardHeight(pokerTable) / 2.0;
-
-    Seat_Info player3 = {xCenter, y}; 
-    drawPlayerCards(cr, pokerTable, images, playerCards, &player3); 
-}
-
-void drawPlayer4Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards)
-{ 
-    //double tableLeft = getTableLeftEdge(pokerTable);
-    double tableRight = getTableRightEdge(pokerTable); 
-    double tableTop = getTableTopEdge(pokerTable);
-    double tableW = getTableWidth(pokerTable);
-    double tableH = getTableHeight(pokerTable);
-
-    double cardH = getCardHeight(pokerTable);
-
-    //double xCenter = tableLeft + tableW * 0.70;  
-    double xCenter = tableRight - getTableHorizontalPadding(pokerTable); 
-    double y = tableTop - cardH - getTableVerticalPadding(pokerTable);
-
-    Seat_Info player4 = {xCenter, y};   
-    drawPlayerCards(cr, pokerTable, images, playerCards, &player4); 
-}
-
-void drawPlayer5Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards)
-{ 
-    double tableLeft = getTableLeftEdge(pokerTable);
-    double tableTop = getTableTopEdge(pokerTable);
-    double tableW = getTableWidth(pokerTable);
-    double tableH = getTableHeight(pokerTable);
-
-    double cardH = getCardHeight(pokerTable);
-
-    double xCenter = tableLeft + getTableHorizontalPadding(pokerTable);
-    double y = tableTop - cardH - getTableVerticalPadding(pokerTable);
-
-    Seat_Info player5 = {xCenter, y}; 
-    drawPlayerCards(cr, pokerTable, images, playerCards, &player5); 
-}
-
-void drawPlayer6Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards)
-{ 
-    double tableLeft = getTableLeftEdge(pokerTable);
-    double tableTop = getTableTopEdge(pokerTable);
-    double tableH = getTableHeight(pokerTable);
-
-    double xCenter = tableLeft + getCardGroupWidth(pokerTable, 2) / 2.0 - 25;
-    //double xCenter = tableLeft + getTableHorizontalPadding(pokerTable); 
-    double y = tableTop + tableH * 0.50 - getCardHeight(pokerTable) / 2.0;
-
-    Seat_Info player6 = {xCenter, y}; 
-    drawPlayerCards(cr, pokerTable, images, playerCards, &player6); 
-}
-
 
 
 Icon* getCardImage(Icon** images, Card card){  //will deal with anteater cards later... cause idk what the anteater is
@@ -545,12 +448,6 @@ double getCenter(double top, double bot){
     return (top + bot) * 0.5; 
 }
 
-
-//right of player info box
-//left of player info box 
-//top of player info box 
-//bot of player info box
-
 void drawBorder(cairo_t* cr, Color borderColor, double borderWidth, double width, double height, double xPos, double yPos){
     cairo_save(cr);
     drawRoundedBoxPath(cr, xPos, yPos, width, height);  
@@ -559,7 +456,6 @@ void drawBorder(cairo_t* cr, Color borderColor, double borderWidth, double width
     cairo_stroke(cr);  
     cairo_restore(cr); 
 }
-
 
 void drawTurnHighlight(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, double xPos, double yPos){
     double width = 2.0; 
@@ -680,6 +576,28 @@ void intializePlayerSeats(GtkWidget* pokerTable, Seat_Info* seats){
     seats[PLAYER_6] = getPlayer6Seat(pokerTable); 
 }
 
+void drawCurrentBetBox(cairo_t* cr, const GameState* gameState, double areaWidth, double areaHeight){
+    char* message[100]; 
+    moneyBuilder(message, gameState->currentBet); 
+    double betBoxW = areaWidth * 0.1;  
+    double betBoxH = betBoxW * 0.35; 
+    double fontSize = betBoxH * 0.35;  //ok this is good
+    double textWidth = getTextWidth(cr, PIXEL_FONT, message, fontSize); 
+    double xPos = getCenter(0, areaWidth) - betBoxW/2.0; 
+    double yPos = areaHeight * 0.1 - betBoxH/2.0;  
+
+    double betFontXPos = getCenter(xPos, xPos + betBoxW) - getTextWidth(cr, PIXEL_FONT, "CURRENT BET", fontSize)/2.0; 
+    double betFontYPos = yPos + (betBoxH * 0.125); 
+    double fontXPos = getCenter(xPos, xPos + betBoxW) - textWidth/2.0; 
+    double fontYPos = betFontYPos + fontSize + 1.5;  
+    drawRoundedBoxPath(cr, xPos, yPos, betBoxW, betBoxH);
+    cairo_set_source_rgba(cr, getRed(PLAYER_BOX_COLOR), getGreen(PLAYER_BOX_COLOR), getBlue(PLAYER_BOX_COLOR), 1);  
+    cairo_fill_preserve(cr);
+    drawText(cr, PLAYER_TEXT_COLOR, "CURRENT BET", fontSize, betFontXPos, betFontYPos); 
+    drawText(cr, PLAYER_TEXT_COLOR, message, fontSize, fontXPos, fontYPos); 
+
+}
+
 gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //in future game state will be read from user data!!
     Poker_Gui* pokerGui = (Poker_Gui*)user_data; 
     Icon** images = pokerGui->images;  
@@ -716,9 +634,15 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
         cardsToDeal = 0; 
     }
 
+    //build the current bet amount
+    drawCurrentBetBox(cr, gameState, areaWidth, areaHeight); 
+
+
     drawPot(cr, pokerGui); 
     drawDealerCards(widget, cr, images, dealerCards, cardsToDeal); //cards to deal aka what turn
-    gtk_range_set_range(GTK_RANGE(getRaiseSlider(pokerGui)), 0, getChipCount(currPlayer)); //set scale to proper chip count for player 
+    int chipRaise = (getChipCount(currPlayer) - gameState->currentBet); 
+    int maxChipRaise = (chipRaise > 0) ? chipRaise : 0; 
+    gtk_range_set_range(GTK_RANGE(getRaiseSlider(pokerGui)), 0, maxChipRaise); //set scale to proper chip count for player 
 
     //drawing player boxes 
     Seat_Info seats[MAX_PLAYERS]; 
@@ -726,18 +650,9 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
     drawPlayerBoxes(cr, widget, pokerGui, seats); 
 
     int currentPlayerIndex = getCurrentPlayerIndex(gameState); 
+    printf("CURR PLAYER INDEX %d", currentPlayerIndex);
     drawTurnHighlight(cr, widget, pokerGui, seats[currentPlayerIndex].xPos, seats[currentPlayerIndex].yPos); 
     printf("finished drawing poker table\n");
 
-    //if end turn draw everyone's cards 
-
-    //have to determine what to draw when someone has folded 
     //draw pop ups for when someone calls, checks, raises, goes all in etc 
-    //table ?
-
-    //need to add some style to the button box
-    //dealer character ? --> w/ dialogue ?
 }
-
-
-//enum --> first to enter into client socket --> aka index 0 --> is player 1

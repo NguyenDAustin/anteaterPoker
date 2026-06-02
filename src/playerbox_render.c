@@ -2,7 +2,7 @@
 #include "render.h"
 
 //player box dimensions 
-#define P_BOX_HEIGHT_PERCENTAGE 0.15 
+#define P_BOX_HEIGHT_PERCENTAGE 0.07 
 #define P_BOX_WIDTH_PERCENTAGE 3
 #define P_BOX_HORIZ_PADDING 0.05
 
@@ -10,8 +10,8 @@
 
 //PLAYER BOX FUNCTIONS
 double getPlayerBoxHeight(GtkWidget* pokerTable){ 
-    double areaH = gtk_widget_get_allocated_height(pokerTable); 
-    return (areaH * P_BOX_HEIGHT_PERCENTAGE);
+    double areaW = gtk_widget_get_allocated_width(pokerTable); 
+    return (areaW * P_BOX_HEIGHT_PERCENTAGE);
 }
 
 double getPlayerBoxWidth(GtkWidget* pokerTable){  
@@ -98,7 +98,7 @@ void drawPlayerInfoBox(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, Pl
     double boxWidth = getPlayerBoxWidth(drawArea); 
     double avatarHeight = getAvatarHeight(drawArea);
     double avatarWidth = getAvatarWidth(drawArea); 
-    double cardH = boxHeight  * 0.6; 
+    double cardH = boxHeight  * 0.7; 
     double cardW = cardH * 0.71; 
     double chipH = boxHeight * 0.1; 
     double chipW = chipH;

@@ -70,11 +70,6 @@ void drawDealerCards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* de
 
 //PLAYER DRAW CARDS FUNCTIONS
 void drawCards(cairo_t* cr, Icon** images, int numOfCards, Card* playerCards, double width, double height, double xPos, double yPos); //general function to draw cards
-void drawPlayer1Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards); //draws player 1's cards at designated position (internal seat var)
-void drawPlayer2Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards); //draws player 2's cards at designated position (internal seat var)
-void drawPlayer3Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards); //draws player 3's cards at designated position (internal seat var)
-void drawPlayer4Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards); //draws player 4's cards at designated position (internal seat var)
-void drawPlayer5Cards(GtkWidget* pokerTable, cairo_t* cr, Icon** images, Card* playerCards); //draws player 5's cards at designated position (internal seat var)
 double getCardGap(GtkWidget *pokerTable);
 void drawBorder(cairo_t* cr, Color borderColor, double borderWidth, double width, double height, double xPos, double yPos);
 
