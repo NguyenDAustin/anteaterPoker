@@ -16,10 +16,7 @@ typedef struct Player_Info
     char name[20];
     int seat;
     int chips;
-
-    //Card hand[2];
-    //Card playerCards[2];
-
+    
     Card playerCards[MAX_PLAYER_CARDS];
     Icon *avatarImg;
     int betSize;

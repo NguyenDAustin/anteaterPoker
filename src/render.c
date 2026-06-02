@@ -576,9 +576,12 @@ void intializePlayerSeats(GtkWidget* pokerTable, Seat_Info* seats){
     seats[PLAYER_6] = getPlayer6Seat(pokerTable); 
 }
 
-void drawCurrentBetBox(cairo_t* cr, const GameState* gameState, double areaWidth, double areaHeight){
+void drawCurrentBetBox(cairo_t* cr, const Poker_Gui* pokerGui, double areaWidth, double areaHeight){
     char* message[100]; 
-    moneyBuilder(message, gameState->currentBet); 
+    GameState* gameState = getGameState(pokerGui);
+    Player_Info* currPlayer = getPlayerInfo(gameState, pokerGui->playerNum - 1); 
+    
+    moneyBuilder(message, gameState->currentBet - currPlayer->currentBet); //changed this call
     double betBoxW = areaWidth * 0.1;  
     double betBoxH = betBoxW * 0.35; 
     double fontSize = betBoxH * 0.35;  //ok this is good
@@ -593,7 +596,7 @@ void drawCurrentBetBox(cairo_t* cr, const GameState* gameState, double areaWidth
     drawRoundedBoxPath(cr, xPos, yPos, betBoxW, betBoxH);
     cairo_set_source_rgba(cr, getRed(PLAYER_BOX_COLOR), getGreen(PLAYER_BOX_COLOR), getBlue(PLAYER_BOX_COLOR), 1);  
     cairo_fill_preserve(cr);
-    drawText(cr, PLAYER_TEXT_COLOR, "CURRENT BET", fontSize, betFontXPos, betFontYPos); 
+    drawText(cr, PLAYER_TEXT_COLOR, "- TO CALL -", fontSize, betFontXPos, betFontYPos); 
     drawText(cr, PLAYER_TEXT_COLOR, message, fontSize, fontXPos, fontYPos); 
 
 }
@@ -615,16 +618,16 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
     Round round = getRound(gameState); 
     int cardsToDeal; 
 
-    if(round == ROUND_PRE_FLOP){
+    if(round == ROUND_PRE_FLOP){ 
         cardsToDeal = 0; 
     }
-    else if(round == ROUND_FLOP){
+    else if(round == ROUND_FLOP){ 
         cardsToDeal = 3; 
     }
-    else if(round == ROUND_TURN){
+    else if(round == ROUND_TURN){ 
         cardsToDeal = 4; 
     }
-    else if(round == ROUND_RIVER){
+    else if(round == ROUND_RIVER){ 
         cardsToDeal = 5; 
     }
     else if(round == ROUND_SHOWDOWN){ // draw a button to wait until next round 
@@ -635,13 +638,13 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
     }
 
     //build the current bet amount
-    drawCurrentBetBox(cr, gameState, areaWidth, areaHeight); 
-
+    drawCurrentBetBox(cr, pokerGui, areaWidth, areaHeight); 
 
     drawPot(cr, pokerGui); 
     drawDealerCards(widget, cr, images, dealerCards, cardsToDeal); //cards to deal aka what turn
-    int chipRaise = (getChipCount(currPlayer) - gameState->currentBet); 
-    int maxChipRaise = (chipRaise > 0) ? chipRaise : 0; 
+    int totalBet = gameState->currentBet - currPlayer->currentBet;
+    int chipRaise = (getChipCount(currPlayer) - totalBet); 
+    int maxChipRaise = (chipRaise > 0) ? chipRaise : 0;   
     gtk_range_set_range(GTK_RANGE(getRaiseSlider(pokerGui)), 0, maxChipRaise); //set scale to proper chip count for player 
 
     //drawing player boxes 
@@ -655,4 +658,4 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
     printf("finished drawing poker table\n");
 
     //draw pop ups for when someone calls, checks, raises, goes all in etc 
-}
+} //gui for server side, 
