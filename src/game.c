@@ -171,6 +171,12 @@ static void dealBoardCard(GameState *game)
         return;
     }
 
+    Card dealt = deal(game->deck);
+
+    while (dealt.type == ANTEATER_CARD) {
+        dealt = deal(game->deck);
+    }
+
     setDealerCard(game, game->board.count, deal(game->deck));
 }
 
