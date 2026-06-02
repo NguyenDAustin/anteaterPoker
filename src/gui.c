@@ -734,7 +734,7 @@ static gboolean onServerMessage(GIOChannel *channel, GIOCondition condition, gpo
 
         GameState *gameState = getGameState(pokerGui);
 
-        Round oldRound = gameState->round;
+        int oldBoardCount = gameState->board.count;
 
         bool parsed = parseGameStateMessage(buffer, gameState);
 
@@ -754,7 +754,7 @@ static gboolean onServerMessage(GIOChannel *channel, GIOCondition condition, gpo
         }
 
         if (parsed) {
-            if (oldRound == ROUND_SHOWDOWN && gameState->round == ROUND_PRE_FLOP){
+            if (oldBoardCount > 0 && gameState->board.count == 0) {
                 reset_timer(pokerGui->timer);
             }
 
