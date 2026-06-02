@@ -400,24 +400,24 @@ void advanceGameRound(GameState *game)
         return;
     }
 
-    if (game->round == ROUND_RIVER) {
-        int winner = determineWinner(game);
-        awardPotToWinner(game, winner);
-        game->round = ROUND_SHOWDOWN;
-        return;
-    }
+    while (game->round != ROUND_SHOWDOWN) {
+        if (game->round == ROUND_RIVER) {
+            int winner = determineWinner(game);
+            awardPotToWinner(game, winner);
+            game->round = ROUND_SHOWDOWN;
+            return;
+        }
 
-    if (game->round < ROUND_SHOWDOWN) {
         game->round = (Round)(game->round + 1);
-    }
 
-    clearBets(game);
-    dealCommunityCards(game);
+        clearBets(game);
+        dealCommunityCards(game);
 
-    // Keep the opening player consistent after community cards are dealt.
-    game->currentPlayerIndex = nextActingPlayerFrom(game, game->firstPlayerIndex - 1);
-    if (game->currentPlayerIndex < 0) {
-        game->currentPlayerIndex = game->firstPlayerIndex;
+        // Keep the opening player consistent after community cards are dealt.
+        game->currentPlayerIndex = nextActingPlayerFrom(game, game->firstPlayerIndex - 1);
+        if (game->currentPlayerIndex >= 0) {
+            return;
+        }
     }
 }
 

@@ -59,6 +59,24 @@ int main(void)
           "busted player should not receive hole cards");
     CHECK(bustedGame.dealerIndex == 2, "dealer rotation should skip busted players");
 
+    GameState allInGame;
+    initGameState(&allInGame);
+    initPlayer(allInGame.players[0], "Alice", 0, 0, HUMAN_PLAYER);
+    initPlayer(allInGame.players[1], "Bob",   1, 0, BOT_PLAYER);
+    allInGame.numPlayers = 2;
+    allInGame.round = ROUND_PRE_FLOP;
+    allInGame.pot = 200;
+    allInGame.players[0]->canAct = false;
+    allInGame.players[1]->canAct = false;
+    allInGame.players[0]->playerCards[0] = cardCtor(HEARTS, ACE);
+    allInGame.players[0]->playerCards[1] = cardCtor(SPADES, ACE);
+    allInGame.players[1]->playerCards[0] = cardCtor(HEARTS, KING);
+    allInGame.players[1]->playerCards[1] = cardCtor(SPADES, KING);
+
+    advanceGameRound(&allInGame);
+    CHECK(allInGame.round == ROUND_SHOWDOWN, "all-in hand should auto-advance to showdown");
+    CHECK(allInGame.pot == 0, "all-in showdown should award the pot");
+
     printf("game test passed\n");
     return 0;
 }

@@ -42,11 +42,34 @@ static void playBotTurns(GameState *game)
             break;
         }
 
+        if (!player->canAct || player->chips <= 0) {
+            if (isBettingPhaseComplete(game)) {
+                advanceGameRound(game);
+                safetyCounter++;
+                continue;
+            }
+            break;
+        }
+
         PlayerAction action = getBotAction(game, botIndex);
         GameActionResult result = handlePlayerAction(game, botIndex, action);
 
         if (result != GAME_ACTION_SUCCESS && result != GAME_ACTION_ROUND_COMPLETE) {
-            break;
+            PlayerAction fallback;
+            int callCost = game->currentBet - player->currentBet;
+
+            if (callCost <= 0) {
+                fallback = (PlayerAction){CHECK, 0};
+            } else if (player->chips > 0) {
+                fallback = (PlayerAction){CALL, callCost};
+            } else {
+                fallback = (PlayerAction){FOLD, 0};
+            }
+
+            result = handlePlayerAction(game, botIndex, fallback);
+            if (result != GAME_ACTION_SUCCESS && result != GAME_ACTION_ROUND_COMPLETE) {
+                break;
+            }
         }
 
         safetyCounter++;
