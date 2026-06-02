@@ -759,7 +759,7 @@ static gboolean onServerMessage(GIOChannel *channel, GIOCondition condition, gpo
             if (oldBoardCount > 0 && gameState->board.count == 0) {
                 reset_timer(pokerGui->timer);
             }
-
+            pokerGui->stateMsg = buffer;
             gtk_widget_queue_draw(getPokerTable(pokerGui));
         }
     }
@@ -799,7 +799,7 @@ void create_poker_gui(GtkApplication *app, gpointer user_data)
     GameState* gameState = malloc(sizeof(GameState)); 
     initGameState(gameState); 
     setGameState(pokerGui, gameState); 
-    parseFullGameState(pokerGui->stateMsg, gameState); 
+    parseGameStateMessage(pokerGui->stateMsg, gameState);
     
     // creating card images
     pokerGui->images = g_malloc(sizeof(Icon *) * (MAX_CARDS + 1)); // because we want to include back of card
@@ -818,10 +818,6 @@ void create_poker_gui(GtkApplication *app, gpointer user_data)
         setAvatar(playerInfo, avatarImages[i]);
        //setAvatar(getPlayerInfo(pokerGui->gameState))
     }
-
-    // initializing player names
-    char *names[MAX_PLAYERS] = {"YOSHI #1", "YOSHI #2", "YOSHI #3", "YOSHI #4", "YOSHI #5", "YOSHI #6"};
-    setPlayerNames(pokerGui, names);
 
     // creating chip icon
     pokerGui->chipIcon = imageToSurface(CHIP_ICON_RESOURCE);

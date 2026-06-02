@@ -43,6 +43,7 @@ int main(void)
 
     CHECK(dst.pot == 250, "pot did not survive round-trip");
     CHECK(dst.currentBet == 50, "currentBet did not survive round-trip");
+    CHECK(dst.numPlayers == 2, "numPlayers did not survive round-trip");
     CHECK(dst.round == ROUND_FLOP, "round did not survive round-trip");
     CHECK(dst.board.count == 3, "board count did not survive round-trip");
     CHECK(dst.board.cards[0].rank == ACE, "board card 0 rank mismatch");
