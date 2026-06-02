@@ -244,6 +244,7 @@ void startNewRound(GameState *game)
     if (game->currentPlayerIndex < 0) {
         game->currentPlayerIndex = game->dealerIndex;
     }
+    game->firstPlayerIndex = game->currentPlayerIndex;
     printf("finished starting new round\n");
 }
 
@@ -413,9 +414,10 @@ void advanceGameRound(GameState *game)
     clearBets(game);
     dealCommunityCards(game);
 
-    game->currentPlayerIndex = nextActingPlayerFrom(game, game->dealerIndex);
+    // Keep the opening player consistent after community cards are dealt.
+    game->currentPlayerIndex = nextActingPlayerFrom(game, game->firstPlayerIndex - 1);
     if (game->currentPlayerIndex < 0) {
-        game->currentPlayerIndex = game->dealerIndex;
+        game->currentPlayerIndex = game->firstPlayerIndex;
     }
 }
 

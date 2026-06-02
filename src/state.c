@@ -342,6 +342,7 @@ void initGameState(GameState *game)
     game->turnNumber = 0;
     game->pot = 0;
     game->currentPlayerIndex = 0;
+    game->firstPlayerIndex = 0;
     game->smallBlind = 1;
     game->bigBlind = 2;
     game->currentBet = 0;
@@ -401,6 +402,7 @@ void resetGameState(GameState *game)
     game->currentBet = 0;
     game->round = ROUND_PRE_FLOP;
     game->turnNumber = 0;
+    game->firstPlayerIndex = 0;
     init_deck(game->deck);
     shuffle(game->deck);
     game->currentPlayerIndex = nextActivePlayerIndex(game);

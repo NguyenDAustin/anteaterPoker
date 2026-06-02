@@ -34,6 +34,7 @@ typedef struct GameState {
 
     int pot;
     int currentPlayerIndex;
+    int firstPlayerIndex;
     int turnNumber;
     int smallBlind;
     int bigBlind;
