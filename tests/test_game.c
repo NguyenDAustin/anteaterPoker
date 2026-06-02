@@ -54,6 +54,7 @@ int main(void)
     startNewRound(&bustedGame);
     CHECK(bustedGame.players[1]->hasFolded, "busted player should be out of the next hand");
     CHECK(!bustedGame.players[1]->canAct, "busted player should not be able to act");
+    CHECK(bustedGame.players[1]->currentBet == 0, "busted player's bet should reset");
     CHECK(bustedGame.players[1]->playerCards[0].rank < 0,
           "busted player should not receive hole cards");
     CHECK(bustedGame.dealerIndex == 2, "dealer rotation should skip busted players");

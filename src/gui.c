@@ -760,7 +760,6 @@ static gboolean onServerMessage(GIOChannel *channel, GIOCondition condition, gpo
                 reset_timer(pokerGui->timer);
             }
 
-            pokerGui->stateMsg = buffer; 
             gtk_widget_queue_draw(getPokerTable(pokerGui));
         }
     }

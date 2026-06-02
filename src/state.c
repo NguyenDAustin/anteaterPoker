@@ -381,14 +381,14 @@ void resetGameState(GameState *game)
 
     for (int i = 0; i < game->numPlayers; i++) {
         Player_Info *player = game->players[i];
+        player->currentBet = 0;
+        player->betSize = 0;
+        player->raisesThisRound = 0;
         if(player->chips <= 0){
             player->canAct = false;
             continue; 
         }
         player->canAct = true;
-        player->currentBet = 0;
-        player->betSize = 0;
-        player->raisesThisRound = 0;
         player->playerCards[0] = empty_card(); 
         player->playerCards[1] = empty_card();
     }

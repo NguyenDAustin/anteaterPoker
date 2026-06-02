@@ -577,7 +577,7 @@ void intializePlayerSeats(GtkWidget* pokerTable, Seat_Info* seats){
 }
 
 void drawCurrentBetBox(cairo_t* cr, const Poker_Gui* pokerGui, double areaWidth, double areaHeight){
-    char* message[100]; 
+    char message[100];
     GameState* gameState = getGameState(pokerGui);
     Player_Info* currPlayer = getPlayerInfo(gameState, pokerGui->playerNum - 1); 
     
@@ -606,9 +606,10 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
     Icon** images = pokerGui->images;  
     GameState* gameState = getGameState(pokerGui); 
     int currPlayerIndex = pokerGui->playerNum - 1; 
+    if (currPlayerIndex < 0 || currPlayerIndex >= gameState->numPlayers) {
+        return FALSE;
+    }
     Player_Info* currPlayer = getPlayerInfo(gameState, currPlayerIndex); 
-
-    parseGameStateMessage(pokerGui->stateMsg, gameState);  //this should update game state properly
 
     Card* dealerCards = getDealerCards(gameState); 
     int areaWidth = gtk_widget_get_allocated_width(widget);
@@ -654,8 +655,11 @@ gboolean drawPokerTable(GtkWidget *widget, cairo_t *cr, gpointer user_data){ //i
 
     int currentPlayerIndex = getCurrentPlayerIndex(gameState); 
     printf("CURR PLAYER INDEX %d", currentPlayerIndex);
-    drawTurnHighlight(cr, widget, pokerGui, seats[currentPlayerIndex].xPos, seats[currentPlayerIndex].yPos); 
+    if (currentPlayerIndex >= 0 && currentPlayerIndex < gameState->numPlayers) {
+        drawTurnHighlight(cr, widget, pokerGui, seats[currentPlayerIndex].xPos, seats[currentPlayerIndex].yPos);
+    }
     printf("finished drawing poker table\n");
 
     //draw pop ups for when someone calls, checks, raises, goes all in etc 
-} //gui for server side, 
+    return FALSE;
+} //gui for server side,
