@@ -134,6 +134,54 @@ bool formatPlayerNameMessage(char* buffer, size_t bufferSize, const char* player
     return charsWritten > 0 && (size_t)charsWritten < bufferSize;
 }
 
+// Password Functions
+bool parseJoinMessage(
+    const char* message,
+    char* nameBuffer,
+    size_t nameBufferSize,
+    char* passwordBuffer,
+    size_t passwordBufferSize
+) {
+    char name[20];
+    char password[64];
+
+    if (!message || !nameBuffer || !passwordBuffer ||
+        nameBufferSize == 0 || passwordBufferSize == 0) {
+        return false;
+    }
+
+    if (sscanf(message, "JOIN %19s %63s", name, password) != 2) {
+        return false;
+    }
+
+    strncpy(nameBuffer, name, nameBufferSize - 1);
+    nameBuffer[nameBufferSize - 1] = '\0';
+
+    strncpy(passwordBuffer, password, passwordBufferSize - 1);
+    passwordBuffer[passwordBufferSize - 1] = '\0';
+
+    return true;
+}
+
+// Password Functions
+bool formatJoinMessage(
+    char* buffer,
+    size_t bufferSize,
+    const char* playerName,
+    const char* password
+) {
+    int charsWritten;
+
+    if (!buffer || bufferSize == 0 ||
+        !playerName || playerName[0] == '\0' ||
+        !password || password[0] == '\0') {
+        return false;
+    }
+
+    charsWritten = snprintf(buffer, bufferSize, "JOIN %s %s\n", playerName, password);
+    return charsWritten > 0 && (size_t)charsWritten < bufferSize;
+}
+
 // ------------------------ FULL GAME STATE PROTOCOL ------------------------
 
 static Cardtype cardTypeForSuit(int suit)

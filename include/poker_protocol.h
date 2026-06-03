@@ -31,6 +31,23 @@ bool formatPokerActionMessage(char* buffer, size_t bufferSize, PokerActionType t
 bool parsePlayerNameMessage(const char* message, char* nameBuffer, size_t nameBufferSize);
 bool formatPlayerNameMessage(char* buffer, size_t bufferSize, const char* playerName);
 
+// Password Functions
+bool parseJoinMessage(
+    const char* message,
+    char* nameBuffer,
+    size_t nameBufferSize,
+    char* passwordBuffer,
+    size_t passwordBufferSize
+);
+
+// Password Functions
+bool formatJoinMessage(
+    char* buffer,
+    size_t bufferSize,
+    const char* playerName,
+    const char* password
+);
+
 // FULL GAME STATE PROTOCOL
 // message format (single line, pipe-separated):
 //   "Turn = 2 | Pot = 5000 | Board = 7:0,13:1,12:2 | Player 1 Chips = 1000 | Player 1 Folded = 0 | Player 1 Cards = 14:0,13:3 | Player 2 Chips = 2000 | ..."

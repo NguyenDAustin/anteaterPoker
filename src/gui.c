@@ -73,6 +73,8 @@ typedef struct {
     GtkWidget *titleLabel;
     GtkWidget *statusLabel;
     GtkWidget *nameEntry;
+    // Password Functions
+    GtkWidget *passwordEntry;
     GtkWidget *saveNameButton;
     GtkWidget *playerLabels[MAX_PLAYERS_COUNT];
     GtkWidget *startButton;
@@ -546,30 +548,32 @@ static void onLobbyStartClicked(GtkWidget *button, gpointer user_data)
 
 static void onLobbyNameSubmitted(GtkWidget *widget, gpointer user_data)
 {
-    // CUSTOM_PLAYER_NAME: sends the typed lobby name to the server.
+    // Password Functions
     Lobby_Gui *lobbyGui = user_data;
     const char *typedName;
+    const char *typedPassword;
     char message[POKER_MESSAGE_SIZE];
 
     (void)widget;
 
-    if (!lobbyGui || !lobbyGui->nameEntry) {
+    if (!lobbyGui || !lobbyGui->nameEntry || !lobbyGui->passwordEntry) {
         return;
     }
 
     typedName = gtk_entry_get_text(GTK_ENTRY(lobbyGui->nameEntry));
+    typedPassword = gtk_entry_get_text(GTK_ENTRY(lobbyGui->passwordEntry));
 
-    if (!formatPlayerNameMessage(message, sizeof(message), typedName)) {
-        gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Enter a name first.");
+    if (!formatJoinMessage(message, sizeof(message), typedName, typedPassword)) {
+        gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Enter a name and password.");
         return;
     }
 
     if (sendMessage(lobbyGui->socket, message) < 0) {
-        gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Could not send name.");
+        gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Could not join.");
         return;
     }
 
-    gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Name saved.");
+    gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Join request sent.");
 }
 
 static gboolean onLobbyServerMessage(GIOChannel *channel, GIOCondition condition, gpointer user_data)
@@ -616,6 +620,16 @@ static gboolean onLobbyServerMessage(GIOChannel *channel, GIOCondition condition
         char playerText[64];
         snprintf(playerText, sizeof(playerText), "You are Player %d.", lobbyGui->playerNum);
         gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), playerText);
+    }
+
+    // Password Functions
+    if (strstr(buffer, "JOIN_OK")) {
+        gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Joined lobby.");
+    }
+
+    // Password Functions
+    if (strstr(buffer, "JOIN_ERROR")) {
+        gtk_label_set_text(GTK_LABEL(lobbyGui->statusLabel), "Wrong password.");
     }
 
     char *lobbyStart = strstr(buffer, "LOBBY_STATE");
@@ -682,7 +696,15 @@ void createWaitingRoom(GtkApplication *app, gpointer user_data)
     gtk_box_pack_start(GTK_BOX(mainBox), lobbyGui->nameEntry, FALSE, FALSE, 0);
     g_signal_connect(lobbyGui->nameEntry, "activate", G_CALLBACK(onLobbyNameSubmitted), lobbyGui);
 
-    lobbyGui->saveNameButton = gtk_button_new_with_label("SAVE NAME");
+    // Password Functions
+    lobbyGui->passwordEntry = gtk_entry_new();
+    gtk_entry_set_max_length(GTK_ENTRY(lobbyGui->passwordEntry), 63);
+    gtk_entry_set_placeholder_text(GTK_ENTRY(lobbyGui->passwordEntry), "Enter password");
+    gtk_entry_set_visibility(GTK_ENTRY(lobbyGui->passwordEntry), FALSE);
+    gtk_box_pack_start(GTK_BOX(mainBox), lobbyGui->passwordEntry, FALSE, FALSE, 0);
+    g_signal_connect(lobbyGui->passwordEntry, "activate", G_CALLBACK(onLobbyNameSubmitted), lobbyGui);
+
+    lobbyGui->saveNameButton = gtk_button_new_with_label("JOIN");
     gtk_widget_set_halign(lobbyGui->saveNameButton, GTK_ALIGN_CENTER);
     setStyle(lobbyGui->saveNameButton, BUTTON_CSS);
     gtk_box_pack_start(GTK_BOX(mainBox), lobbyGui->saveNameButton, FALSE, FALSE, 0);

@@ -13,6 +13,11 @@
 #include "poker_protocol.h"
 
 #define BOT_STARTING_CHIPS 1000
+// Password Functions
+#define LOBBY_PASSWORD "anteater"
+
+// Password Functions
+static bool lobbyAuthenticated[MAX_PLAYERS_COUNT];
 
 static bool startsWithMessage(const char *message, const char *prefix)
 {
@@ -193,6 +198,7 @@ bool handleLobbyClientMessage(int *clientSockets, int joinedPlayers, int playerI
     int clientSocket = clientSockets[playerIndex];
     char buffer[LOBBY_MESSAGE_SIZE];
     char playerName[20];
+    char password[64];
     ssize_t bytesRead;
 
     if (!clientSockets || !game || !gameStarted || clientSocket < 0) {
@@ -206,6 +212,33 @@ bool handleLobbyClientMessage(int *clientSockets, int joinedPlayers, int playerI
         printf("client disconnected in lobby\n");
         close(clientSockets[playerIndex]);
         clientSockets[playerIndex] = -1;
+        // Password Functions
+        lobbyAuthenticated[playerIndex] = false;
+        return false;
+    }
+
+    // Password Functions
+    if (parseJoinMessage(buffer, playerName, sizeof(playerName), password, sizeof(password))) {
+        if (strcmp(password, LOBBY_PASSWORD) != 0) {
+            sendMessage(clientSocket, "JOIN_ERROR Bad password\n");
+            printf("Player %d entered a bad lobby password\n", playerIndex + 1);
+            lobbyAuthenticated[playerIndex] = false;
+            return false;
+        }
+
+        sanitizeLobbyPlayerName(playerName);
+        strncpy(game->players[playerIndex]->name, playerName, sizeof(game->players[playerIndex]->name) - 1);
+        game->players[playerIndex]->name[sizeof(game->players[playerIndex]->name) - 1] = '\0';
+        lobbyAuthenticated[playerIndex] = true;
+
+        sendMessage(clientSocket, "JOIN_OK\n");
+        printf("Player %d joined as %s\n", playerIndex + 1, game->players[playerIndex]->name);
+        return false;
+    }
+
+    // Password Functions
+    if (!lobbyAuthenticated[playerIndex]) {
+        sendMessage(clientSocket, "JOIN_ERROR Please enter your name and password first.\n");
         return false;
     }
 
