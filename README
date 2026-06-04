@@ -54,10 +54,31 @@ Run the server and client:
     make run-server PORT=10215
     make run-client HOST=localhost PORT=10215
 
-Run tests:
+Run the full automated test suite (communication and unit tests):
 
     make test
+
+Run the test groups individually:
+
     make test-comm
+    make test-unit
+
+The unit tests can also be run one at a time by name:
+
+    make test_card
+    make test_deck
+    make test_hand
+    make test_player
+    make test_state
+    make test_rules
+    make test_game
+    make test_monte_carlo
+    make test_bot
+    make test_poker_protocol
+    make test_state_protocol
+
+Run the interactive GUI test:
+
     make test-gui HOST=localhost PORT=10215
 
 Additional interactive test targets are:
