@@ -11,6 +11,15 @@ typedef enum
     BOT_PLAYER
 } PlayerType;
 
+typedef enum
+{
+    NONE,
+    BLUFFER,
+    AGGRESSIVE,
+    CONSERVATIVE,
+    BALANCED
+} BotType;
+
 typedef struct Player_Info
 {
     char name[20];
@@ -22,10 +31,11 @@ typedef struct Player_Info
     int betSize;
     int currentBet;
     int raisesThisRound;
-    PlayerType type;
     bool canAct;
     bool hasFolded;
-    bool isReady; 
+    bool isReady;
+    PlayerType playerType;
+    BotType botType; 
 
 } Player_Info;
 
@@ -49,9 +59,14 @@ typedef struct
 
 //GETTER FUNCTIONS FOR PLAYER INFO - NO PLAYER NUM GIVEN 
 const char* getName(const Player_Info* playerInfo); 
+int getSeat(const Player_Info* playerInfo);
 int getChipCount(const Player_Info* playerInfo); 
+int getBetSize(const Player_Info* playerInfo);
+PlayerType getPlayerType(const Player_Info* playerInfo);
+BotType getBotType(const Player_Info* playerInfo);
 Icon* getAvatar(const Player_Info* playerInfo); 
 Card* getCards(const Player_Info* playerInfo);
+const Card* getCardsConst(const Player_Info* playerInfo);
 bool getReadyStatus(const Player_Info* playerInfo); 
 
 //SETTER FUNCTIONS FOR PLAYER INFO - NO PLAYER NUM GIVEN
@@ -60,6 +75,7 @@ void setSeat(Player_Info *player, int seat);
 void setChipCount(Player_Info *player, int chipCount);
 void setBetSize(Player_Info *player, int betSize);
 void setPlayerType(Player_Info *player, PlayerType type);
+void setBotType(Player_Info *player, BotType type);
 void setAvatar(Player_Info *player, Icon *avatarImg);
 void setCards(Player_Info* player, Card* playerCards);
 void setReadyStatus(Player_Info* player, bool isReady);

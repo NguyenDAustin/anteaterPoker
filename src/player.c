@@ -25,7 +25,8 @@ void initPlayer(Player_Info *player, const char *name, int seat, int chips, Play
     player->betSize = 0;
     player->currentBet = 0;
     player->raisesThisRound = 0;
-    player->type = type;
+    player->playerType = type;
+    player->botType = (type == BOT_PLAYER) ? BALANCED : NONE;
     player->canAct = chips > 0; //can act in the current hand if they have chips
     player->hasFolded = false;
     player->avatarImg = NULL;
@@ -113,7 +114,18 @@ PlayerType getPlayerType(const Player_Info *player)
         return HUMAN_PLAYER;
     }
 
-    return player->type;
+    return player->playerType;
+}
+
+BotType getBotType(const Player_Info *player)
+{
+    if (!player)
+    {
+        printf("ERROR: player is NULL\n");
+        return NONE;
+    }
+
+    return player->botType;
 }
 
 Icon *getAvatar(const Player_Info *player)
@@ -222,7 +234,36 @@ void setPlayerType(Player_Info *player, PlayerType type)
         return;
     }
 
-    player->type = type;
+    player->playerType = type;
+
+    if (type == HUMAN_PLAYER)
+    {
+        player->botType = NONE;
+    }
+    else if (player->botType == NONE)
+    {
+        player->botType = BALANCED;
+    }
+}
+
+void setBotType(Player_Info *player, BotType type)
+{
+    if (!player)
+    {
+        printf("ERROR: player is NULL cannot set bot type\n");
+        return;
+    }
+
+    player->botType = type;
+
+    if (type == NONE)
+    {
+        player->playerType = HUMAN_PLAYER;
+    }
+    else
+    {
+        player->playerType = BOT_PLAYER;
+    }
 }
 
 void setAvatar(Player_Info *player, Icon *avatarImg)

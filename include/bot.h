@@ -5,18 +5,6 @@
 #include "card.h"
 #include "game.h"
 
-typedef enum
-{
-    BLUFFER,
-    AGGRESSIVE,
-    CONSERVATIVE,
-    BALANCED
-} BotType;
-typedef struct
-{
-    Player_Info *bot;
-    BotType type;
-} Bot;
 
 void initBot(Player_Info *bot, const char *name, int seat, int chips);
 int evalPreFlop(Card hand[2]);

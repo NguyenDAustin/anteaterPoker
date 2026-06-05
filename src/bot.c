@@ -4,13 +4,50 @@
 #include <stdlib.h>
 
 #define BOT_MONTE_CARLO_SIMULATIONS 500
-#define BOT_RAISE_EQUITY 0.70
-#define BOT_BET_EQUITY 0.62
-#define BOT_CALL_MARGIN 0.08
+
+typedef struct
+{
+    int preflopOpenRaiseScore;
+    int preflopRaiseScore;
+    int preflopCallScore;
+    int preflopCheapCallScore;
+    double postflopRaiseEquity;
+    double postflopBetEquity;
+    double callMargin;
+    double raisePotFraction;
+    double openRaiseChipFraction;
+    int bluffChance;
+} BotStrategy;
+
+static BotStrategy getBotStrategy(BotType type)
+{
+    switch (type)
+    {
+        case BLUFFER:
+            return (BotStrategy){6, 9, 5, 4, 0.65, 0.50, -0.02, 0.75, 0.07, 20};
+
+        case AGGRESSIVE:
+            return (BotStrategy){7, 9, 6, 4, 0.64, 0.54, 0.02, 0.75, 0.07, 8};
+
+        case CONSERVATIVE:
+            return (BotStrategy){10, 12, 8, 6, 0.80, 0.72, 0.15, 0.40, 0.04, 0};
+
+        case BALANCED:
+        case NONE:
+        default:
+            return (BotStrategy){8, 10, 7, 5, 0.70, 0.62, 0.08, 0.50, 0.05, 0};
+    }
+}
+
+static bool shouldBluff(BotStrategy strategy)
+{
+    return strategy.bluffChance > 0 && (rand() % 100) < strategy.bluffChance;
+}
 
 void initBot(Player_Info *bot, const char *name, int seat, int chips)
 {
     initPlayer(bot, name, seat, chips, BOT_PLAYER);
+    setBotType(bot, BALANCED);
 }
 
 int getChenValue(Card card)
@@ -207,7 +244,8 @@ int calculateBotRaiseAmount(GameState *game, int playerIndex)
     if (availableRaiseChips <= 0)
         return 0;
 
-    int raiseAmount = game->pot / 2;
+    BotStrategy strategy = getBotStrategy(bot->botType);
+    int raiseAmount = (int)(game->pot * strategy.raisePotFraction);
 
     if (raiseAmount < game->bigBlind)
         raiseAmount = game->bigBlind;
@@ -255,14 +293,15 @@ double calculateCallPrice(GameState *game, int playerIndex)
 PlayerAction getBotPreFlopAction(GameState *game, int playerIndex)
 {
     Player_Info *bot = game->players[playerIndex];
+    BotStrategy strategy = getBotStrategy(bot->botType);
     int score = evalPreFlop(bot->playerCards);
     int callAmount = calculateCallCost(game, playerIndex);
     bool canRaiseAgain = bot->raisesThisRound == 0;
 
     if (callAmount <= 0)
     {
-        if (score >= 8 && canRaiseAgain) {
-            int raiseAmount = bot->chips / 20;
+        if (canRaiseAgain && (score >= strategy.preflopOpenRaiseScore || shouldBluff(strategy))) {
+            int raiseAmount = (int)(bot->chips * strategy.openRaiseChipFraction);
             if (raiseAmount < game->bigBlind)
                 raiseAmount = game->bigBlind;
             if (raiseAmount > bot->chips)
@@ -275,7 +314,7 @@ PlayerAction getBotPreFlopAction(GameState *game, int playerIndex)
         return (PlayerAction) {CHECK, 0};
     }
 
-    if (score >= 10)
+    if (score >= strategy.preflopRaiseScore)
     {
         if (canRaiseAgain) {
             int raiseAmount = calculateBotRaiseAmount(game, playerIndex);
@@ -285,11 +324,11 @@ PlayerAction getBotPreFlopAction(GameState *game, int playerIndex)
 
         return (PlayerAction) {CALL, callAmount};
     }
-    else if (score >= 7)
+    else if (score >= strategy.preflopCallScore)
     {
         return (PlayerAction) {CALL, callAmount};
     }
-    else if (score >= 5 && callAmount <= game->bigBlind)
+    else if (score >= strategy.preflopCheapCallScore && callAmount <= game->bigBlind)
     {
         return (PlayerAction) {CALL, callAmount};
     }
@@ -302,13 +341,14 @@ PlayerAction getBotPreFlopAction(GameState *game, int playerIndex)
 PlayerAction getBotPostFlopAction(GameState *game, int playerIndex)
 {
     Player_Info *bot = game->players[playerIndex];
+    BotStrategy strategy = getBotStrategy(bot->botType);
     int callCost = calculateCallCost(game, playerIndex);
     bool canRaiseAgain = bot->raisesThisRound == 0;
     double equity = estimateBotEquity(game, playerIndex, BOT_MONTE_CARLO_SIMULATIONS);
     double callPrice = calculateCallPrice(game, playerIndex);
 
     if (callCost == 0) {
-        if (equity >= BOT_BET_EQUITY && canRaiseAgain) {
+        if (canRaiseAgain && (equity >= strategy.postflopBetEquity || shouldBluff(strategy))) {
             int raiseAmount = calculateBotRaiseAmount(game, playerIndex);
             if (raiseAmount > 0)
                 return (PlayerAction){RAISE, raiseAmount};
@@ -317,13 +357,13 @@ PlayerAction getBotPostFlopAction(GameState *game, int playerIndex)
         return (PlayerAction){CHECK, 0};
     }
 
-    if (equity >= BOT_RAISE_EQUITY && canRaiseAgain) {
+    if (equity >= strategy.postflopRaiseEquity && canRaiseAgain) {
         int raiseAmount = calculateBotRaiseAmount(game, playerIndex);
         if (raiseAmount > 0)
             return (PlayerAction){RAISE, raiseAmount};
     }
 
-    if (equity >= callPrice + BOT_CALL_MARGIN)
+    if (equity >= callPrice + strategy.callMargin)
         return (PlayerAction){CALL, callCost};
 
     return (PlayerAction){FOLD, 0};

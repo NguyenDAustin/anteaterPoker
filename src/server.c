@@ -38,7 +38,7 @@ static void playBotTurns(GameState *game)
         int botIndex = game->currentPlayerIndex;
         Player_Info *player = game->players[botIndex];
 
-        if (!player || player->type != BOT_PLAYER) {
+        if (!player || player->playerType != BOT_PLAYER) {
             break;
         }
 
