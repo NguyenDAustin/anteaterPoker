@@ -10,6 +10,8 @@
 #include "communication_bundle.h"
 #include "timer.h"
 
+typedef struct ServerWindow ServerWindow;
+
 extern const char *TITLE;
 extern const char *CSS;
 extern const char *POKER_TABLE;
@@ -33,6 +35,7 @@ typedef struct Poker_Gui
 
     //Game State 
     GameState* gameState; 
+    ServerWindow *stateWindow;
 
     //important stuff
     int socket;

@@ -12,7 +12,7 @@ COMMON_SRC = deck.c hand.c state.c game.c communication.c poker_protocol.c \
 	player.c card.c state_protocol.c lobby.c monte_carlo.c bot.c
 
 SERVER_SRC = server.c $(COMMON_SRC)
-GUI_SRC = render.c gui_client.c gui.c playerbox_render.c timer.c $(COMMON_SRC)
+GUI_SRC = render.c gui_client.c gui.c playerbox_render.c timer.c gui_server.c $(COMMON_SRC)
 
 .PHONY: all server client clean
 
