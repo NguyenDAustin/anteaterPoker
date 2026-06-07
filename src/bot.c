@@ -245,7 +245,10 @@ int calculateBotRaiseAmount(GameState *game, int playerIndex)
         return 0;
 
     BotStrategy strategy = getBotStrategy(bot->botType);
-    int raiseAmount = (int)(game->pot * strategy.raisePotFraction);
+    int raiseAmount = (int)((game->pot + callCost) * strategy.raisePotFraction);
+
+    if (callCost > 0 && raiseAmount < callCost)
+        raiseAmount = callCost;
 
     if (raiseAmount < game->bigBlind)
         raiseAmount = game->bigBlind;

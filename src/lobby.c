@@ -2,9 +2,11 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 #include <sys/select.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "communication.h"
@@ -18,6 +20,7 @@
 
 // Password Functions
 static bool lobbyAuthenticated[MAX_PLAYERS_COUNT];
+static bool botRandomSeeded = false;
 
 static bool startsWithMessage(const char *message, const char *prefix)
 {
@@ -141,6 +144,19 @@ bool canStartLobbyGame(int joinedPlayers)
     return joinedPlayers >= 1;
 }
 
+static BotType randomBotType(void)
+{
+    BotType botTypes[] = { BLUFFER, AGGRESSIVE, CONSERVATIVE, BALANCED };
+    int botTypeCount = sizeof(botTypes) / sizeof(botTypes[0]);
+
+    if (!botRandomSeeded) {
+        srand((unsigned int)time(NULL));
+        botRandomSeeded = true;
+    }
+
+    return botTypes[rand() % botTypeCount];
+}
+
 static void fillEmptySeatsWithBots(GameState *game, int maxPlayers)
 {
     if (!game) {
@@ -153,6 +169,7 @@ static void fillEmptySeatsWithBots(GameState *game, int maxPlayers)
 
         snprintf(botName, sizeof(botName), "Bot%d", seat + 1);
         initBot(game->players[seat], botName, seat, BOT_STARTING_CHIPS);
+        setBotType(game->players[seat], randomBotType());
         game->numPlayers++;
     }
 }
