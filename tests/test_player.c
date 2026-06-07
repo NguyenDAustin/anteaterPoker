@@ -14,7 +14,7 @@ int main(void)
     CHECK(strcmp(p.name, "Naveen") == 0, "name not set");
     CHECK(p.chips == 1000, "chips not set");
     CHECK(p.seat == 0, "seat not set");
-    CHECK(p.type == HUMAN_PLAYER, "type not set");
+    CHECK(p.playerType == HUMAN_PLAYER, "type not set");
     CHECK(p.hasFolded == false, "hasFolded should default to false");
     CHECK(p.canAct == true, "canAct should be true for a player with chips");
 

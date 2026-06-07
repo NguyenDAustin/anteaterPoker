@@ -327,12 +327,9 @@ void initGameState(GameState *game)
         return;
     }
 
-    printf("joiner players: %d", game->numPlayers);
     game->deck = malloc(sizeof(Deck)); //alloc memory
     game->players = malloc(sizeof(Player_Info*) * MAX_PLAYERS);
     allocatePlayerInfos(game->players, MAX_PLAYERS); 
-
-    //memset(game, 0, sizeof(GameState)); --> ok i allocate memory outside of function (in lobby) - queency
 
     init_deck(game->deck);
     shuffle(game->deck);

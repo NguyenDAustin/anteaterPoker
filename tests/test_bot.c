@@ -13,7 +13,7 @@ int main(void)
     Player_Info bot;
     initBot(&bot, "BotBob", 1, 1000);
     CHECK(strcmp(bot.name, "BotBob") == 0, "initBot should set bot name");
-    CHECK(bot.type == BOT_PLAYER, "initBot should set type to BOT_PLAYER");
+    CHECK(bot.playerType == BOT_PLAYER, "initBot should set type to BOT_PLAYER");
     CHECK(bot.chips == 1000, "initBot should set chip count");
 
     /* preflop eval: pocket aces should score higher than 7-2 offsuit */

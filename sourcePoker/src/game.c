@@ -194,8 +194,6 @@ void startNewRound(GameState *game)
     int previousDealer = getDealerIndex(game); 
     int numPlayers = getJoinedPlayers(game); 
 
-    printf("finished setting dealer index etc\n"); 
-
     resetGameState(game);
 
     for (int i = 0; i < numPlayers; i++) {
@@ -211,19 +209,12 @@ void startNewRound(GameState *game)
         return;
     }
 
-     printf("finished count players in hand\n");
-
     game->dealerIndex = nextPlayerFrom(game, previousDealer);
     if (game->dealerIndex < 0) {
         game->dealerIndex = 0;
     }
 
-    printf("finished doing something to dealer index\n");
-
-
     dealHoleCardsToActivePlayers(game);
-
-    printf("finished dealing cards to all players\n");
 
     int smallBlindIndex = nextPlayerFrom(game, game->dealerIndex);
     int bigBlindIndex = nextPlayerFrom(game, smallBlindIndex);
