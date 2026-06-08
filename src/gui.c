@@ -1,7 +1,6 @@
 
 #include "gui.h"
 #include "communication.h"
-#include "gui_server.h"
 #include "lobby.h"
 #include "poker_protocol.h"
 #include "timer.h"
@@ -784,9 +783,6 @@ static gboolean onServerMessage(GIOChannel *channel, GIOCondition condition, gpo
             }
             pokerGui->stateMsg = buffer;
             gtk_widget_queue_draw(getPokerTable(pokerGui));
-            if (pokerGui->stateWindow) {
-                updateServerWindow(pokerGui->stateWindow, pokerGui->stateMsg, gameState);
-            }
         }
     }
 
@@ -834,10 +830,6 @@ void create_poker_gui(GtkApplication *app, gpointer user_data)
     // creating avatar images
     pokerGui->avatarImages = g_malloc(sizeof(Icon *) * MAX_PLAYERS); // allocate for max players which is 6
     createAvatarImages(pokerGui->avatarImages);
-
-    // create the separate state window for state message 
-    pokerGui->stateWindow = createServerWindow(app, pokerGui);
-    updateServerWindow(pokerGui->stateWindow, pokerGui->stateMsg, gameState);
 
     // initializing avatar images
     Icon **avatarImages = getAvatarImages(pokerGui);
