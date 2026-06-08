@@ -164,6 +164,74 @@ int main(void)
     CHECK(eval_points(two_pair_hand, two_pair_board) == 2,
           "expected two pair");
 
+    Card kicker_p1[2] = {
+        normal_card(HEARTS, ACE),
+        normal_card(CLUBS, KING)
+    };
+    Card kicker_p2[2] = {
+        normal_card(SPADES, ACE),
+        normal_card(CLUBS, QUEEN)
+    };
+    Card kicker_board[5] = {
+        normal_card(CLUBS, ACE),
+        normal_card(DIAMONDS, NINE),
+        normal_card(CLUBS, SEVEN),
+        normal_card(SPADES, FIVE),
+        normal_card(DIAMONDS, TWO)
+    };
+    CHECK(compare_hands(kicker_p1, kicker_p2, kicker_board) == 1,
+          "expected pair of aces with better kicker to win");
+
+    Card board_split_p1[2] = {
+        normal_card(CLUBS, TWO),
+        normal_card(DIAMONDS, THREE)
+    };
+    Card board_split_p2[2] = {
+        normal_card(CLUBS, FOUR),
+        normal_card(DIAMONDS, FIVE)
+    };
+    Card board_split_board[5] = {
+        normal_card(HEARTS, ACE),
+        normal_card(SPADES, KING),
+        normal_card(CLUBS, QUEEN),
+        normal_card(DIAMONDS, JACK),
+        normal_card(HEARTS, TEN)
+    };
+    CHECK(compare_hands(board_split_p1, board_split_p2, board_split_board) == 0,
+          "expected board royal flush to split");
+
+    Card flush_compare_p1[2] = {
+        normal_card(HEARTS, ACE),
+        normal_card(CLUBS, TWO)
+    };
+    Card flush_compare_p2[2] = {
+        normal_card(HEARTS, KING),
+        normal_card(CLUBS, THREE)
+    };
+    Card flush_compare_board[5] = {
+        normal_card(HEARTS, QUEEN),
+        normal_card(HEARTS, NINE),
+        normal_card(HEARTS, SEVEN),
+        normal_card(HEARTS, FIVE),
+        normal_card(CLUBS, FOUR)
+    };
+    CHECK(compare_hands(flush_compare_p1, flush_compare_p2, flush_compare_board) == 1,
+          "expected ace high flush to beat king high flush");
+
+    Card anteater_hand[2] = {
+        cardCtor(ANTEATER_SUIT, ANTEATER),
+        normal_card(HEARTS, NINE)
+    };
+    Card anteater_board[5] = {
+        normal_card(HEARTS, EIGHT),
+        normal_card(HEARTS, SEVEN),
+        normal_card(HEARTS, SIX),
+        normal_card(HEARTS, FIVE),
+        normal_card(CLUBS, TWO)
+    };
+    CHECK(eval_points(anteater_hand, anteater_board) == 8,
+          "expected Anteater to complete straight flush");
+
     clear_hand(&hand);
     CHECK(hand.count == 0, "clear_hand should reset count to 0");
 

@@ -82,22 +82,12 @@ static void shuffleCards(Card cards[], int count)
 
 static int compareSimulatedHands(Card heroHand[HAND_SIZE], Card villainHand[HAND_SIZE], Card board[BOARD_SIZE])
 {
-    int heroPoints = eval_points(heroHand, board);
-    int villainPoints = eval_points(villainHand, board);
+    int result = compare_hands(heroHand, villainHand, board);
 
-    if (heroPoints > villainPoints)
+    if (result == 1)
         return 1;
 
-    if (heroPoints < villainPoints)
-        return -1;
-
-    int heroTieValue = eval_hand(heroHand);
-    int villainTieValue = eval_hand(villainHand);
-
-    if (heroTieValue > villainTieValue)
-        return 1;
-
-    if (heroTieValue < villainTieValue)
+    if (result == 2)
         return -1;
 
     return 0;

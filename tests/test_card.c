@@ -15,9 +15,11 @@ int main(void)
     Card a = cardCtor(SPADES, ACE);
     CHECK(a.rank == ACE, "cardCtor rank mismatch");
     CHECK(a.suit == SPADES, "cardCtor suit mismatch");
+    CHECK(a.type == NORMAL_CARD, "cardCtor normal type mismatch");
 
     Card anteater = cardCtor(ANTEATER_SUIT, ANTEATER);
     CHECK(anteater.suit == ANTEATER_SUIT, "anteater suit mismatch");
+    CHECK(anteater.type == ANTEATER_CARD, "anteater type mismatch");
 
     printf("card test passed\n");
     return 0;

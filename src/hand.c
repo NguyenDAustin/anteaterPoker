@@ -6,6 +6,299 @@
 #define TOTAL_HAND_CARDS 7
 #define HAND_SIZE 2
 #define BOARD_SIZE 5
+#define RANK_LIMIT 15
+#define SUIT_LIMIT 4
+
+static void clear_result(HandResult *result)
+{
+    result->rank = HAND_HIGH_CARD;
+    for (int i = 0; i < BEST_HAND_SIZE; i++) {
+        result->best_cards[i].rank = ANTEATER;
+        result->best_cards[i].suit = ANTEATER_SUIT;
+        result->best_cards[i].type = ANTEATER_CARD;
+        result->tie_values[i] = 0;
+    }
+}
+
+static int compare_results(const HandResult *a, const HandResult *b)
+{
+    if (a->rank > b->rank) {
+        return 1;
+    }
+    if (a->rank < b->rank) {
+        return -1;
+    }
+
+    for (int i = 0; i < BEST_HAND_SIZE; i++) {
+        if (a->tie_values[i] > b->tie_values[i]) {
+            return 1;
+        }
+        if (a->tie_values[i] < b->tie_values[i]) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static void count_cards(Card cards[], int count, int rank_counts[RANK_LIMIT],
+                        int suit_counts[SUIT_LIMIT],
+                        int rank_present[RANK_LIMIT],
+                        int suit_rank_present[SUIT_LIMIT][RANK_LIMIT])
+{
+    for (int i = 0; i < RANK_LIMIT; i++) {
+        rank_counts[i] = 0;
+        rank_present[i] = 0;
+    }
+
+    for (int suit = 0; suit < SUIT_LIMIT; suit++) {
+        suit_counts[suit] = 0;
+        for (int rank = 0; rank < RANK_LIMIT; rank++) {
+            suit_rank_present[suit][rank] = 0;
+        }
+    }
+
+    for (int i = 0; i < count; i++) {
+        if (cards[i].type == ANTEATER_CARD) {
+            continue;
+        }
+        if (cards[i].rank < TWO || cards[i].rank > ACE) {
+            continue;
+        }
+        if (cards[i].suit < HEARTS || cards[i].suit > SPADES) {
+            continue;
+        }
+
+        rank_counts[cards[i].rank]++;
+        rank_present[cards[i].rank] = 1;
+        suit_counts[cards[i].suit]++;
+        suit_rank_present[cards[i].suit][cards[i].rank] = 1;
+    }
+}
+
+static int best_straight_high(int present[RANK_LIMIT])
+{
+    for (int high = ACE; high >= SIX; high--) {
+        int found = 1;
+        for (int rank = high; rank > high - 5; rank--) {
+            if (!present[rank]) {
+                found = 0;
+                break;
+            }
+        }
+        if (found) {
+            return high;
+        }
+    }
+
+    if (present[ACE] && present[TWO] && present[THREE] && present[FOUR] && present[FIVE]) {
+        return FIVE;
+    }
+
+    return 0;
+}
+
+static void fill_high_cards_from_counts(int rank_counts[RANK_LIMIT], int tie_values[BEST_HAND_SIZE],
+                                        int start, int needed, int skip1, int skip2)
+{
+    int index = start;
+
+    for (int rank = ACE; rank >= TWO && index < start + needed; rank--) {
+        if (rank == skip1 || rank == skip2 || rank_counts[rank] <= 0) {
+            continue;
+        }
+
+        tie_values[index] = rank;
+        index++;
+    }
+}
+
+static HandResult evaluate_cards_no_wild(Card cards[], int count)
+{
+    HandResult result;
+    int rank_counts[RANK_LIMIT];
+    int suit_counts[SUIT_LIMIT];
+    int rank_present[RANK_LIMIT];
+    int suit_rank_present[SUIT_LIMIT][RANK_LIMIT];
+
+    clear_result(&result);
+    count_cards(cards, count, rank_counts, suit_counts, rank_present, suit_rank_present);
+
+    int best_sf_high = 0;
+    for (int suit = HEARTS; suit <= SPADES; suit++) {
+        if (suit_counts[suit] >= 5) {
+            int high = best_straight_high(suit_rank_present[suit]);
+            if (high > best_sf_high) {
+                best_sf_high = high;
+            }
+        }
+    }
+
+    if (best_sf_high == ACE) {
+        result.rank = HAND_ROYAL_FLUSH;
+        result.tie_values[0] = ACE;
+        return result;
+    }
+    if (best_sf_high > 0) {
+        result.rank = HAND_STRAIGHT_FLUSH;
+        result.tie_values[0] = best_sf_high;
+        return result;
+    }
+
+    for (int rank = ACE; rank >= TWO; rank--) {
+        if (rank_counts[rank] >= 4) {
+            result.rank = HAND_FOUR_OF_KIND;
+            result.tie_values[0] = rank;
+            fill_high_cards_from_counts(rank_counts, result.tie_values, 1, 1, rank, 0);
+            return result;
+        }
+    }
+
+    int trip_rank = 0;
+    int pair_rank = 0;
+    for (int rank = ACE; rank >= TWO; rank--) {
+        if (rank_counts[rank] >= 3 && trip_rank == 0) {
+            trip_rank = rank;
+        }
+        else if (rank_counts[rank] >= 2 && pair_rank == 0) {
+            pair_rank = rank;
+        }
+    }
+
+    if (trip_rank > 0) {
+        for (int rank = ACE; rank >= TWO; rank--) {
+            if (rank != trip_rank && rank_counts[rank] >= 2) {
+                pair_rank = rank;
+                break;
+            }
+        }
+    }
+
+    if (trip_rank > 0 && pair_rank > 0) {
+        result.rank = HAND_FULL_HOUSE;
+        result.tie_values[0] = trip_rank;
+        result.tie_values[1] = pair_rank;
+        return result;
+    }
+
+    for (int suit = HEARTS; suit <= SPADES; suit++) {
+        if (suit_counts[suit] >= 5) {
+            result.rank = HAND_FLUSH;
+            int index = 0;
+            for (int rank = ACE; rank >= TWO && index < BEST_HAND_SIZE; rank--) {
+                if (suit_rank_present[suit][rank]) {
+                    result.tie_values[index] = rank;
+                    index++;
+                }
+            }
+            return result;
+        }
+    }
+
+    int straight_high = best_straight_high(rank_present);
+    if (straight_high > 0) {
+        result.rank = HAND_STRAIGHT;
+        result.tie_values[0] = straight_high;
+        return result;
+    }
+
+    if (trip_rank > 0) {
+        result.rank = HAND_THREE_OF_KIND;
+        result.tie_values[0] = trip_rank;
+        fill_high_cards_from_counts(rank_counts, result.tie_values, 1, 2, trip_rank, 0);
+        return result;
+    }
+
+    int high_pair = 0;
+    int low_pair = 0;
+    for (int rank = ACE; rank >= TWO; rank--) {
+        if (rank_counts[rank] >= 2) {
+            if (high_pair == 0) {
+                high_pair = rank;
+            }
+            else {
+                low_pair = rank;
+                break;
+            }
+        }
+    }
+
+    if (high_pair > 0 && low_pair > 0) {
+        result.rank = HAND_TWO_PAIR;
+        result.tie_values[0] = high_pair;
+        result.tie_values[1] = low_pair;
+        fill_high_cards_from_counts(rank_counts, result.tie_values, 2, 1, high_pair, low_pair);
+        return result;
+    }
+
+    if (high_pair > 0) {
+        result.rank = HAND_ONE_PAIR;
+        result.tie_values[0] = high_pair;
+        fill_high_cards_from_counts(rank_counts, result.tie_values, 1, 3, high_pair, 0);
+        return result;
+    }
+
+    result.rank = HAND_HIGH_CARD;
+    fill_high_cards_from_counts(rank_counts, result.tie_values, 0, BEST_HAND_SIZE, 0, 0);
+    return result;
+}
+
+static HandResult evaluate_player_cards(Card player_cards[2], Card board_cards[5])
+{
+    HandResult best;
+    int found = 0;
+    Card hand[HAND_SIZE] = { player_cards[0], player_cards[1] };
+
+    clear_result(&best);
+
+    for (Rank first_rank = TWO; first_rank <= ACE; first_rank++) {
+        for (Suit first_suit = HEARTS; first_suit <= SPADES; first_suit++) {
+            Card first_card = hand[0];
+            if (hand[0].type == ANTEATER_CARD) {
+                first_card.rank = first_rank;
+                first_card.suit = first_suit;
+                first_card.type = NORMAL_CARD;
+            }
+
+            for (Rank second_rank = TWO; second_rank <= ACE; second_rank++) {
+                for (Suit second_suit = HEARTS; second_suit <= SPADES; second_suit++) {
+                    Card cards[TOTAL_HAND_CARDS];
+                    Card second_card = hand[1];
+
+                    if (hand[1].type == ANTEATER_CARD) {
+                        second_card.rank = second_rank;
+                        second_card.suit = second_suit;
+                        second_card.type = NORMAL_CARD;
+                    }
+                    else if (second_rank != TWO || second_suit != HEARTS) {
+                        continue;
+                    }
+
+                    cards[0] = first_card;
+                    cards[1] = second_card;
+                    for (int i = 0; i < BOARD_SIZE; i++) {
+                        cards[i + HAND_SIZE] = board_cards[i];
+                    }
+
+                    HandResult current = evaluate_cards_no_wild(cards, TOTAL_HAND_CARDS);
+                    if (!found || compare_results(&current, &best) > 0) {
+                        best = current;
+                        found = 1;
+                    }
+                }
+            }
+
+            if (hand[0].type != ANTEATER_CARD) {
+                break;
+            }
+        }
+        if (hand[0].type != ANTEATER_CARD) {
+            break;
+        }
+    }
+
+    return best;
+}
 
 void init_hand(Hand *hand) //initialize hand
 {
@@ -170,37 +463,35 @@ void sort(Card cards[], int count) //helper
 //i actually don't think we'd need this
 int highCard(Card cards[], int count)
 {
-    for (int i = 0; i < count; i++) {
+    int best = ANTEATER;
 
-        // skip Anteater for now
-        if (cards[i].type != ANTEATER_CARD) {
-            return cards[i].rank;
+    for (int i = 0; i < count; i++) {
+        if (cards[i].type != ANTEATER_CARD && cards[i].rank > best) {
+            best = cards[i].rank;
         }
     }
 
-    return ANTEATER;
+    return best;
 }
 
 int pairs(Card cards[], int count)
 {
-    int temp = 0;
+    int rank_counts[RANK_LIMIT] = {0};
+    int total = 0;
 
-    for (int i = 0; i < count - 1; i++) {
-
-        // skip Anteater cards
-        if (cards[i].type == ANTEATER_CARD) {
-            continue;
-        }
-
-        if (cards[i].rank == cards[i + 1].rank) {
-
-            temp++;
-
-            i++;
+    for (int i = 0; i < count; i++) {
+        if (cards[i].type != ANTEATER_CARD && cards[i].rank >= TWO && cards[i].rank <= ACE) {
+            rank_counts[cards[i].rank]++;
         }
     }
 
-    return temp;
+    for (int rank = TWO; rank <= ACE; rank++) {
+        if (rank_counts[rank] >= 2) {
+            total++;
+        }
+    }
+
+    return total;
 }
 
 int twoPair(Card cards[], int count)
@@ -210,15 +501,8 @@ int twoPair(Card cards[], int count)
 
 int three(Card cards[], int count)
 {
-    for (int i = 0; i < count - 2; i++) {
-
-        // skip Anteater cards
-        if (cards[i].type == ANTEATER_CARD) {
-            continue;
-        }
-
-        if (cards[i].rank == cards[i + 1].rank && cards[i].rank == cards[i + 2].rank) {
-
+    for (Rank rank = TWO; rank <= ACE; rank++) {
+        if (count_rank(cards, count, rank) >= 3) {
             return 1;
         }
     }
@@ -228,62 +512,15 @@ int three(Card cards[], int count)
 
 int straight(Card cards[], int count)
 {
-    sort(cards, count);
-
-    int streak = 1;
-
-    for (int i = 0; i < count - 1; i++) {
-
-        // skip duplicates
-        if (cards[i].rank == cards[i + 1].rank) {
-            continue;
-        }
-
-        if (cards[i + 1].rank == cards[i].rank + 1) {
-
-            streak++;
-
-            if (streak >= 5) {
-                return 1;
-            }
-        }
-        else {
-            streak = 1;
-        }
-    }
-
-    // A 2 3 4 5 case
-
-    int has_ace = 0;
-    int has_two = 0;
-    int has_three = 0;
-    int has_four = 0;
-    int has_five = 0;
+    int present[RANK_LIMIT] = {0};
 
     for (int i = 0; i < count; i++) {
-
-        if (cards[i].rank == ACE) {
-            has_ace = 1;
-        }
-        else if (cards[i].rank == TWO) {
-            has_two = 1;
-        }
-        else if (cards[i].rank == THREE) {
-            has_three = 1;
-        }
-        else if (cards[i].rank == FOUR) {
-            has_four = 1;
-        }
-        else if (cards[i].rank == FIVE) {
-            has_five = 1;
+        if (cards[i].type != ANTEATER_CARD && cards[i].rank >= TWO && cards[i].rank <= ACE) {
+            present[cards[i].rank] = 1;
         }
     }
 
-    if (has_ace && has_two && has_three && has_four && has_five) {
-        return 1;
-    }
-
-    return 0;
+    return best_straight_high(present) > 0;
 }
 
 int flush(Card cards[], int count)
@@ -310,42 +547,32 @@ int flush(Card cards[], int count)
 
 int fullHouse(Card cards[], int count)
 {
-    int tempThree = 0;
-    int tempTwo = 0;
+    int trip_rank = 0;
 
-    for (int i = 0; i < count - 2; i++) {
-
-        if (cards[i].rank == cards[i + 1].rank && cards[i].rank == cards[i + 2].rank) {
-
-            tempThree = 1;
+    for (Rank rank = ACE; rank >= TWO; rank--) {
+        if (count_rank(cards, count, rank) >= 3) {
+            trip_rank = rank;
+            break;
         }
     }
 
-    for (int i = 0; i < count - 1; i++) {
+    if (trip_rank == 0) {
+        return 0;
+    }
 
-        if (cards[i].rank == cards[i + 1].rank) {
-
-            // make sure pair is different rank
-            if (!(i < count - 2 && cards[i].rank == cards[i + 2].rank)) {
-
-                tempTwo = 1;
-            }
+    for (Rank rank = ACE; rank >= TWO; rank--) {
+        if (rank != trip_rank && count_rank(cards, count, rank) >= 2) {
+            return 1;
         }
     }
 
-    return tempThree && tempTwo;
+    return 0;
 }
 
 int four(Card cards[], int count)
 {
-    for (int i = 0; i < count - 3; i++) {
-
-        if (cards[i].type == ANTEATER_CARD) {
-            continue;
-        }
-
-        if (cards[i].rank == cards[i + 1].rank && cards[i].rank == cards[i + 2].rank && cards[i].rank == cards[i + 3].rank) {
-
+    for (Rank rank = TWO; rank <= ACE; rank++) {
+        if (count_rank(cards, count, rank) >= 4) {
             return 1;
         }
     }
@@ -355,26 +582,10 @@ int four(Card cards[], int count)
 
 int straightFlush(Card cards[], int count)
 {
-    Card suited_cards[7];
-    int suited_count;
+    HandResult result = evaluate_cards_no_wild(cards, count);
 
-    Suit suits[] = { HEARTS, DIAMONDS, CLUBS, SPADES };
-
-    for (int s = 0; s < 4; s++) {
-        suited_count = 0;
-
-        for (int i = 0; i < count; i++) {
-            if (cards[i].suit == suits[s]) {
-                suited_cards[suited_count] = cards[i];
-                suited_count++;
-            }
-        }
-
-        if (suited_count >= 5) {
-            if (straight(suited_cards, suited_count)) {
-                return 1;
-            }
-        }
+    if (result.rank == HAND_STRAIGHT_FLUSH || result.rank == HAND_ROYAL_FLUSH) {
+        return 1;
     }
 
     return 0;
@@ -382,56 +593,10 @@ int straightFlush(Card cards[], int count)
 
 int royalFlush(Card cards[], int count)
 {
-    Card suited_cards[7];
-    int suited_count = 0;
+    HandResult result = evaluate_cards_no_wild(cards, count);
 
-    Suit suits[] = { HEARTS, DIAMONDS, CLUBS, SPADES };
-
-    for (int s = 0; s < 4; s++) {
-
-        suited_count = 0;
-
-        //one suit
-        for (int i = 0; i < count; i++) {
-
-            if (cards[i].suit == suits[s]) {
-
-                suited_cards[suited_count] = cards[i];
-                suited_count++;
-            }
-        }
-
-        if (suited_count >= 5) {
-
-            int has_ace = 0;
-            int has_king = 0;
-            int has_queen = 0;
-            int has_jack = 0;
-            int has_ten = 0;
-
-            for (int i = 0; i < suited_count; i++) {
-
-                if (suited_cards[i].rank == ACE) {
-                    has_ace = 1;
-                }
-                else if (suited_cards[i].rank == KING) {
-                    has_king = 1;
-                }
-                else if (suited_cards[i].rank == QUEEN) {
-                    has_queen = 1;
-                }
-                else if (suited_cards[i].rank == JACK) {
-                    has_jack = 1;
-                }
-                else if (suited_cards[i].rank == TEN) {
-                    has_ten = 1;
-                }
-            }
-
-            if (has_ace && has_king && has_queen && has_jack && has_ten) {
-                return 1;
-            }
-        }
+    if (result.rank == HAND_ROYAL_FLUSH) {
+        return 1;
     }
 
     return 0;
@@ -471,7 +636,13 @@ int count_suit(Card cards[], int count, Suit suit)
 Card best_anteater_card(Card player_cards[2], Card board_cards[5])
 {
     Card best_card;
-    int best_points = -1;
+    HandResult best_result;
+    int found = 0;
+
+    best_card.rank = ANTEATER;
+    best_card.suit = ANTEATER_SUIT;
+    best_card.type = ANTEATER_CARD;
+    clear_result(&best_result);
 
     for (Suit suit = HEARTS; suit <= SPADES; suit++) {
         for (Rank rank = TWO; rank <= ACE; rank++) {
@@ -492,11 +663,12 @@ Card best_anteater_card(Card player_cards[2], Card board_cards[5])
                 }
             }
 
-            int points = eval_points(temp_hand, board_cards);
+            HandResult current = evaluate_player_cards(temp_hand, board_cards);
 
-            if (points > best_points) {
-                best_points = points;
+            if (!found || compare_results(&current, &best_result) > 0) {
+                best_result = current;
                 best_card = test_card;
+                found = 1;
             }
         }
     }
@@ -507,97 +679,36 @@ Card best_anteater_card(Card player_cards[2], Card board_cards[5])
 
 int eval_hand(Card player_cards[2])
 {
-    int ans = 0;
+    int first = player_cards[0].type == ANTEATER_CARD ? ACE : player_cards[0].rank;
+    int second = player_cards[1].type == ANTEATER_CARD ? ACE : player_cards[1].rank;
 
-    for (int i = 0; i < 2; i++)
-    {
-        ans += player_cards[i].rank;
+    if (first < second) {
+        int temp = first;
+        first = second;
+        second = temp;
     }
 
-    return ans;
+    return first * RANK_LIMIT + second;
 }
 
 int eval_points(Card player_cards[2], Card board_cards[5])
 {
-    Card cards[7];
-    int count = 7;
-
-    //add cards from hand to a new hand
-    for (int i = 0; i < 2; i++) {
-        cards[i] = player_cards[i];
-    }
-
-    //add cards from board to new hand
-    for (int i = 0; i < 5; i++) {
-        cards[i + 2] = board_cards[i];
-    }
-
-    // replace Anteater in hand
-    for (int i = 0; i < 2; i++) {
-        if (cards[i].type == ANTEATER_CARD) {
-        cards[i] = best_anteater_card(player_cards, board_cards);
-        }
-    }
-    
-    sort(cards, count);
-
-    if (royalFlush(cards, count)) {
-        return 9;
-    }
-    else if (straightFlush(cards, count)) {
-        return 8;
-    }
-    else if (four(cards, count)) {
-        return 7;
-    }
-    else if (fullHouse(cards, count)) {
-        return 6;
-    }
-    else if (flush(cards, count)) {
-        return 5;
-    }
-    else if (straight(cards, count)) {
-        return 4;
-    }
-    else if (three(cards, count)) {
-        return 3;
-    }
-    else if (twoPair(cards, count)) {
-        return 2;
-    }
-    else if (pairs(cards, count)) {
-        return 1;
-    }
-    else {
-        return 0;
-    }
+    HandResult result = evaluate_player_cards(player_cards, board_cards);
+    return result.rank;
 }
 
 int compare_hands(Card p1_hand[2], Card p2_hand[2], Card board[5])
 {
-    int p1_big = eval_points(p1_hand, board);
-    int p2_big = eval_points(p2_hand, board);
+    HandResult p1_result = evaluate_player_cards(p1_hand, board);
+    HandResult p2_result = evaluate_player_cards(p2_hand, board);
+    int comparison = compare_results(&p1_result, &p2_result);
 
-    int p1_small = eval_points(p1_hand, board);
-    int p2_small = eval_points(p2_hand, board);
-
-    if (p1_big > p2_big){
-        return 1; //player 1 wins
+    if (comparison > 0) {
+        return 1;
     }
-    else if (p1_big < p2_big){ //to check
-        return 2; //player 2 wins;
-    }
-    else if (p1_big == p2_big){
-        if (p1_small > p2_small){
-            return 1;
-        }
-        else if (p1_small > p2_small){
-            return 2; 
-        }
-    }
-    else {
-        return 0; //split the pot
+    if (comparison < 0) {
+        return 2;
     }
 
-    return 0;
+    return 0; // split the pot
 }

@@ -19,7 +19,7 @@ void init_deck(Deck *deck) //initalize deck
 
     for (int i = 0; i < 4; i++){
         deck->cards[index].rank = ANTEATER;
-        deck->cards[index].suit = ANTEATER;
+        deck->cards[index].suit = ANTEATER_SUIT;
         deck->cards[index].type = ANTEATER_CARD;
         index++;
     }
@@ -73,23 +73,6 @@ void print_card(Card card) {
         return;
     }
 
-    const char *rank_names[] = {
-        "Anteater",
-        "ACE",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9",
-        "10",
-        "Jack",
-        "Queen",
-        "King",
-    };
-
     const char *suit_names[] = {
         "Hearts",
         "Diamonds",
@@ -98,7 +81,26 @@ void print_card(Card card) {
         "Anteater Suit"
     };
 
-    printf("%s of %s\n", rank_names[card.rank], suit_names[card.suit]); //display
+    const char *rank_name = "Unknown";
+
+    switch (card.rank) {
+    case TWO: rank_name = "2"; break;
+    case THREE: rank_name = "3"; break;
+    case FOUR: rank_name = "4"; break;
+    case FIVE: rank_name = "5"; break;
+    case SIX: rank_name = "6"; break;
+    case SEVEN: rank_name = "7"; break;
+    case EIGHT: rank_name = "8"; break;
+    case NINE: rank_name = "9"; break;
+    case TEN: rank_name = "10"; break;
+    case JACK: rank_name = "Jack"; break;
+    case QUEEN: rank_name = "Queen"; break;
+    case KING: rank_name = "King"; break;
+    case ACE: rank_name = "Ace"; break;
+    default: break;
+    }
+
+    printf("%s of %s\n", rank_name, suit_names[card.suit]); //display
 }
 
 
@@ -108,5 +110,6 @@ Card cardCtor(Suit suit, int rank){
     Card card; 
     card.suit = suit; 
     card.rank = rank; 
+    card.type = (rank == ANTEATER || suit == ANTEATER_SUIT) ? ANTEATER_CARD : NORMAL_CARD;
     return card; 
 } 

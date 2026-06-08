@@ -429,8 +429,6 @@ int determineWinner(const GameState *game)
     }
 
     int winner = -1;
-    int bestPoints = -1;
-    int bestTieValue = -1;
 
     for (int i = 0; i < game->numPlayers; i++) {
         const Player_Info *player = game->players[i];
@@ -447,17 +445,16 @@ int determineWinner(const GameState *game)
         }
 
         Card handCards[2] = { player->playerCards[0], player->playerCards[1] };
+        Card winnerHand[2] = {
+            game->players[winner]->playerCards[0],
+            game->players[winner]->playerCards[1]
+        };
         Card boardCards[MAX_DEALER_CARDS];
         for (int card = 0; card < MAX_DEALER_CARDS; card++) {
             boardCards[card] = game->board.cards[card];
         }
 
-        int points = eval_points(handCards, boardCards);
-        int tieValue = eval_hand(handCards);
-
-        if (points > bestPoints || (points == bestPoints && tieValue > bestTieValue)) {
-            bestPoints = points;
-            bestTieValue = tieValue;
+        if (compare_hands(handCards, winnerHand, boardCards) == 1) {
             winner = i;
         }
     }
