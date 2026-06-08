@@ -7,6 +7,13 @@
     if (!(cond)) { fprintf(stderr, "FAIL: %s\n", msg); return 1; } \
 } while (0)
 
+static Card normal_card(Suit suit, Rank rank)
+{
+    Card card = cardCtor(suit, rank);
+    card.type = NORMAL_CARD;
+    return card;
+}
+
 int main(void)
 {
     GameState game;
@@ -68,14 +75,38 @@ int main(void)
     allInGame.pot = 200;
     allInGame.players[0]->canAct = false;
     allInGame.players[1]->canAct = false;
-    allInGame.players[0]->playerCards[0] = cardCtor(HEARTS, ACE);
-    allInGame.players[0]->playerCards[1] = cardCtor(SPADES, ACE);
-    allInGame.players[1]->playerCards[0] = cardCtor(HEARTS, KING);
-    allInGame.players[1]->playerCards[1] = cardCtor(SPADES, KING);
+    allInGame.players[0]->playerCards[0] = normal_card(HEARTS, ACE);
+    allInGame.players[0]->playerCards[1] = normal_card(SPADES, ACE);
+    allInGame.players[1]->playerCards[0] = normal_card(HEARTS, KING);
+    allInGame.players[1]->playerCards[1] = normal_card(SPADES, KING);
 
     advanceGameRound(&allInGame);
     CHECK(allInGame.round == ROUND_SHOWDOWN, "all-in hand should auto-advance to showdown");
     CHECK(allInGame.pot == 0, "all-in showdown should award the pot");
+
+    GameState winnerGame;
+    initGameState(&winnerGame);
+    initPlayer(winnerGame.players[0], "Alice", 0, 1000, HUMAN_PLAYER);
+    initPlayer(winnerGame.players[1], "Bob",   1, 1000, HUMAN_PLAYER);
+    winnerGame.numPlayers = 2;
+    winnerGame.board.count = 5;
+    winnerGame.board.cards[0] = normal_card(CLUBS, TWO);
+    winnerGame.board.cards[1] = normal_card(DIAMONDS, FIVE);
+    winnerGame.board.cards[2] = normal_card(HEARTS, SEVEN);
+    winnerGame.board.cards[3] = normal_card(CLUBS, NINE);
+    winnerGame.board.cards[4] = normal_card(DIAMONDS, JACK);
+    winnerGame.players[0]->playerCards[0] = normal_card(HEARTS, ACE);
+    winnerGame.players[0]->playerCards[1] = normal_card(SPADES, ACE);
+    winnerGame.players[1]->playerCards[0] = normal_card(HEARTS, KING);
+    winnerGame.players[1]->playerCards[1] = normal_card(SPADES, QUEEN);
+    CHECK(determineWinner(&winnerGame) == 0,
+          "pair of aces should beat king high");
+
+    winnerGame.pot = 75;
+    awardPotToWinner(&winnerGame, 0);
+    CHECK(winnerGame.pot == 0, "awardPotToWinner should clear the pot");
+    CHECK(winnerGame.players[0]->chips == 1075,
+          "awardPotToWinner should add pot to winner");
 
     printf("game test passed\n");
     return 0;
