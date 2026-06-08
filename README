@@ -1,20 +1,33 @@
 ANTEATER POKER
 ==============
 
+Authors: Team 21, EECS 22L, UC Irvine
+Version: 1.0
+Date: June 7, 2026
+
 Anteater Poker is an online Texas Hold'em variant for Linux. A server hosts
 the table and players connect through graphical clients. The game includes
 the Anteater card: in a player's hand it acts as a wildcard, while on the
 board it replaces the community cards and advances the game to the final
 round.
 
+Features include graphical play, player names and lobby password entry, bots
+for empty seats, multiple bot strategies, a GUI timer, and chip counts that
+serve as the game scoreboard. See the user manual for complete rules,
+including the Anteater card behavior.
+
+Known limitations: server and client are intended for Linux/EECS hosts, the
+client requires a graphical display, and network play requires an open TCP
+port between the server and clients.
+
 CUSTOMER PACKAGE
 ----------------
 
-The precompiled customer package is Poker_Beta.tar.gz.
+The precompiled customer package is Poker_V1.0.tar.gz.
 
 Extract it:
 
-    tar -xzf Poker_Beta.tar.gz
+    tar -xzf Poker_V1.0.tar.gz
 
 Start the server in one terminal:
 
@@ -35,13 +48,13 @@ The customer package includes the user manual:
 SOURCE PACKAGE
 --------------
 
-The developer source package is Poker_Beta_src.tar.gz. Building requires
+The developer source package is Poker_V1.0_src.tar.gz. Building requires
 Linux, GCC, Make, GTK+ 3 development packages, and Fontconfig development
 packages.
 
 Extract and build it:
 
-    tar -xzf Poker_Beta_src.tar.gz
+    tar -xzf Poker_V1.0_src.tar.gz
     make
 
 The compiled programs are:
@@ -81,16 +94,15 @@ Run the interactive GUI test:
 
     make test-gui HOST=localhost PORT=10215
 
-Additional interactive test targets are:
+Additional server/client smoke test targets are:
 
     make test_server PORT=10215
     make test_client HOST=localhost PORT=10215
-    make test_gui HOST=localhost PORT=10215
 
 Create the source and customer packages:
 
     make tar
-    make customer_tar
+    make customer-tar
 
 Remove generated executables and archives:
 
