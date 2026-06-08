@@ -24,6 +24,7 @@
 
 #define SERVER_MAX_PLAYERS 6//the max amount of clients the server will allow to connect
 #define STARTING_CHIPS 1000
+#define BOT_TURN_DELAY_SECONDS 1.5
 
 /* Helper used to request a GUI update on the GTK main loop from worker threads */
 
@@ -76,9 +77,13 @@ static void playBotTurns(GameState *game)
             break;
         }
 
+        broadcastGameState(clientSockets, joinedPlayers, game);
+        sleep(BOT_TURN_DELAY_SECONDS);
+
         if (!player->canAct || player->chips <= 0) {
             if (isBettingPhaseComplete(game)) {
                 advanceGameRound(game);
+                broadcastGameState(clientSockets, joinedPlayers, game);
                 safetyCounter++;
                 continue;
             }
@@ -106,6 +111,7 @@ static void playBotTurns(GameState *game)
             }
         }
 
+        broadcastGameState(clientSockets, joinedPlayers, game);
         safetyCounter++;
     }
 }
@@ -347,10 +353,7 @@ void lobby(int serverSocket, int* clientSockets)
                         playBotTurns(game);
                         schedule_server_update(game);
 
-                        char buffer[4096];
-                        if (formatFullGameState(buffer, sizeof(buffer), game)) {
-                            broadcastToAll(clientSockets, joinedPlayers, buffer);
-                        }
+                        broadcastGameState(clientSockets, joinedPlayers, game);
                     }
 
                     if (!startedNow) {
@@ -370,10 +373,7 @@ void lobby(int serverSocket, int* clientSockets)
                 playBotTurns(game);
                 schedule_server_update(game);
 
-                char buffer[4096];
-                if (formatFullGameState(buffer, sizeof(buffer), game)) {
-                    broadcastToAll(clientSockets, joinedPlayers, buffer);
-                }
+                broadcastGameState(clientSockets, joinedPlayers, game);
             }
         }
     }
