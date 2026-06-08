@@ -50,6 +50,19 @@ int main(void)
     CHECK(strcmp(dst.players[0]->name, "Alice") == 0, "player name did not survive");
     CHECK(dst.players[1]->chips == 750, "player chips did not survive");
 
+    src.round = ROUND_PRE_FLOP;
+    src.board.count = 0;
+    for (int i = 0; i < MAX_DEALER_CARDS; i++) {
+        src.board.cards[i] = empty_card();
+    }
+
+    CHECK(formatGameStateMessage(buffer, sizeof(buffer), &src),
+          "formatGameStateMessage failed for empty board");
+    CHECK(parseGameStateMessage(buffer, &dst),
+          "parseGameStateMessage failed for empty board");
+    CHECK(dst.board.count == 0, "empty board count did not parse");
+    CHECK(dst.board.cards[0].rank == -1, "old board card should be cleared");
+
     /* parsing garbage should fail */
     CHECK(!parseGameStateMessage("not a real message", &dst),
           "garbage should fail to parse");

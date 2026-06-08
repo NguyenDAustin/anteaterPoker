@@ -103,6 +103,11 @@ bool parseGameStateMessage(const char* message, GameState* game)
     bool sawEnd = false;
     int value;
 
+    game->board.count = 0;
+    for (int i = 0; i < MAX_DEALER_CARDS; i++) {
+        game->board.cards[i] = empty_card();
+    }
+
     while ((line = strtok_r(NULL, "\n", &savePtr)) != NULL) {
         if (strcmp(line, "END") == 0) {
             sawEnd = true;
@@ -126,7 +131,9 @@ bool parseGameStateMessage(const char* message, GameState* game)
         } else if (sscanf(line, "numPlayers %d", &value) == 1) {
             game->numPlayers = value;
         } else if (sscanf(line, "boardCount %d", &value) == 1) {
-            game->board.count = value;
+            if (value >= 0 && value <= MAX_DEALER_CARDS) {
+                game->board.count = value;
+            }
         }
         else if (sscanf(line, "nextRoundPlayers %d", &value) == 1) {
             game->nextRoundPlayers = value;
@@ -140,6 +147,7 @@ bool parseGameStateMessage(const char* message, GameState* game)
                 idx++;
                 cursor += consumed;
             }
+            game->board.count = idx;
         } else if (strncmp(line, "player ", 7) == 0) {
             int idx, chips, currentBet, hasFolded, canAct;
             int r1, s1, r2, s2;

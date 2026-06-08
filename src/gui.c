@@ -757,10 +757,17 @@ static gboolean onServerMessage(GIOChannel *channel, GIOCondition condition, gpo
         printf("server says:\n%s\n", buffer);
 
         GameState *gameState = getGameState(pokerGui);
+        char *stateStart = buffer;
+        char *cursor = buffer;
+
+        while ((cursor = strstr(cursor, "STATE\n")) != NULL) {
+            stateStart = cursor;
+            cursor += strlen("STATE\n");
+        }
 
         int oldBoardCount = gameState->board.count;
 
-        bool parsed = parseGameStateMessage(buffer, gameState);
+        bool parsed = parseGameStateMessage(stateStart, gameState);
 
         printf("parsed = %d, pot = %d, numPlayers = %d\n",
                parsed,

@@ -24,7 +24,7 @@
 
 #define SERVER_MAX_PLAYERS 6//the max amount of clients the server will allow to connect
 #define STARTING_CHIPS 1000
-#define BOT_TURN_DELAY_SECONDS 1.5
+#define BOT_TURN_DELAY_SECONDS 1
 
 /* Helper used to request a GUI update on the GTK main loop from worker threads */
 
@@ -57,7 +57,20 @@ static void schedule_server_update(GameState *game)
     g_idle_add(idle_update_server, args);
 }
 
-static void playBotTurns(GameState *game)
+static void broadcastGameState(int *clientSockets, int joinedPlayers, GameState *game)
+{
+    char buffer[4096];
+
+    if (!clientSockets || joinedPlayers <= 0 || !game) {
+        return;
+    }
+
+    if (formatFullGameState(buffer, sizeof(buffer), game)) {
+        broadcastToAll(clientSockets, joinedPlayers, buffer);
+    }
+}
+
+static void playBotTurns(GameState *game, int *clientSockets, int joinedPlayers)
 {
 
     int safetyCounter = 0;
@@ -254,7 +267,7 @@ void readMessage(int* clientSockets, int joinedPlayers, int playerIndex, GameSta
         printf("Player action: %s amount=%d\n", pokerActionTypeToString(action.type), action.amount);
         PlayerAction playerAction = {.actionType = action.type, .amount = action.amount}; 
         handlePlayerAction(game, playerIndex, playerAction); //added here
-        playBotTurns(game);
+        playBotTurns(game, clientSockets, joinedPlayers);
         schedule_server_update(game);
     } else {
         printf("Unknown client message: %s\n", buffer);
@@ -350,7 +363,7 @@ void lobby(int serverSocket, int* clientSockets)
                     bool startedNow = handleLobbyClientMessage(clientSockets, joinedPlayers, i, game, &gameStarted);
 
                     if (startedNow) {
-                        playBotTurns(game);
+                        playBotTurns(game, clientSockets, joinedPlayers);
                         schedule_server_update(game);
 
                         broadcastGameState(clientSockets, joinedPlayers, game);
@@ -370,7 +383,7 @@ void lobby(int serverSocket, int* clientSockets)
                     schedule_server_update(game);
                 }
                 
-                playBotTurns(game);
+                playBotTurns(game, clientSockets, joinedPlayers);
                 schedule_server_update(game);
 
                 broadcastGameState(clientSockets, joinedPlayers, game);
