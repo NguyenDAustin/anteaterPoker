@@ -82,16 +82,38 @@ void moneyBuilder(char* text, int chipCount){ //123456 --> 123456 //     ,456   
 }
 
 void drawPlayerInfoBox(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, Player_Info* playerInfo, double xPos, double yPos, bool currPlayer){ //the x and y pos that you want to start drawing at (left corner)
+    if (!cr) {
+        printf("ERROR: could not draw player info box b/c cairo context is NULL\n");
+        return;
+    }
+
+    if (!drawArea) {
+        printf("ERROR: could not draw player info box b/c draw area is NULL\n");
+        return;
+    }
+
+    if (!pokerGui) {
+        printf("ERROR: could not draw player info box b/c poker gui is NULL\n");
+        return;
+    }
+
+    if (!playerInfo) {
+        printf("ERROR: could not draw player info box b/c player info is NULL\n");
+        return;
+    }
+
     printf("drawing player info box\n");
     int borderWidth = 3.0;
-    int avatarBorderWidth = borderWidth * 0.5;  
 
     //loading gui stuff
     Icon** images = getImages(pokerGui);
     const char* playerName = playerInfo->name;
     Icon* avatarImg = playerInfo->avatarImg;
     Card* playerCards = playerInfo->playerCards;
-    GameState* gameState = getGameState(pokerGui);
+    if (!playerCards) {
+        printf("ERROR: could not draw player info box b/c player cards are NULL\n");
+        return;
+    }
 
     //loading heights and width
     double boxHeight = getPlayerBoxHeight(drawArea);
@@ -150,7 +172,6 @@ void drawPlayerInfoBox(cairo_t* cr, GtkWidget* drawArea, Poker_Gui* pokerGui, Pl
     double cardsTotalW = MAX_PLAYER_CARDS * cardW + (MAX_PLAYER_CARDS - 1) * getCardGap(drawArea);
     double cardYPos = getCenter(yPos + borderWidth, yPos + boxHeight - borderWidth) - (cardH/2.0); //center --> make helper function
     double cardXPos = xPos + boxWidth - cardsTotalW - sidePadding;  //card width //double cardsTotalW = MAX_PLAYER_CARDS * cardW + (MAX_PLAYER_CARDS - 1) * cardGap;
-    Round round = getRound(gameState); 
 
     //add the cards -
     if(currPlayer){

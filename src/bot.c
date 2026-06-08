@@ -44,6 +44,17 @@ static bool shouldBluff(BotStrategy strategy)
     return strategy.bluffChance > 0 && (rand() % 100) < strategy.bluffChance;
 }
 
+static bool isValidBotTarget(GameState *game, int playerIndex)
+{
+    return game != NULL &&
+           game->players != NULL &&
+           game->numPlayers >= 0 &&
+           game->numPlayers <= MAX_PLAYERS_COUNT &&
+           playerIndex >= 0 &&
+           playerIndex < game->numPlayers &&
+           game->players[playerIndex] != NULL;
+}
+
 void initBot(Player_Info *bot, const char *name, int seat, int chips)
 {
     initPlayer(bot, name, seat, chips, BOT_PLAYER);
@@ -77,6 +88,9 @@ int getChenValue(Card card)
 
 int evalPreFlop(Card hand[2])
 {
+    if (hand == NULL)
+        return 0;
+
     int score = 0;
 
     Rank r1 = hand[0].rank;
@@ -129,13 +143,10 @@ int evalPreFlop(Card hand[2])
 
 int calculateDrawBonus(GameState *game, int playerIndex)
 {
-    if (game == NULL || playerIndex < 0 || playerIndex >= game->numPlayers)
+    if (!isValidBotTarget(game, playerIndex))
         return 0;
 
     Player_Info *bot = game->players[playerIndex];
-
-    if (bot == NULL)
-        return 0;
 
     Card cards[TOTAL_HAND_CARDS];
     int count = 0;
@@ -186,13 +197,10 @@ int calculateDrawBonus(GameState *game, int playerIndex)
 
 int evalPostFlop(GameState *game, int playerIndex)
 {
-    if (game == NULL || playerIndex < 0 || playerIndex >= game->numPlayers)
+    if (!isValidBotTarget(game, playerIndex))
         return 0;
 
     Player_Info *bot = game->players[playerIndex];
-
-    if (bot == NULL)
-        return 0;
 
     Card cards[TOTAL_HAND_CARDS];
     int count = 0;
@@ -231,12 +239,12 @@ int evalPostFlop(GameState *game, int playerIndex)
 
 int calculateBotRaiseAmount(GameState *game, int playerIndex)
 {
-    if (game == NULL || playerIndex < 0 || playerIndex >= game->numPlayers)
+    if (!isValidBotTarget(game, playerIndex))
         return 0;
 
     Player_Info *bot = game->players[playerIndex];
 
-    if (bot == NULL || bot->chips <= 0)
+    if (bot->chips <= 0)
         return 0;
 
     int callCost = calculateCallCost(game, playerIndex);
@@ -261,13 +269,10 @@ int calculateBotRaiseAmount(GameState *game, int playerIndex)
 
 int calculateCallCost(GameState *game, int playerIndex)
 {
-    if (game == NULL || playerIndex < 0 || playerIndex >= game->numPlayers)
+    if (!isValidBotTarget(game, playerIndex))
         return 0;
 
     Player_Info *bot = game->players[playerIndex];
-
-    if (bot == NULL)
-        return 0;
 
     int callCost = game->currentBet - bot->currentBet;
 
@@ -282,7 +287,7 @@ int calculateCallCost(GameState *game, int playerIndex)
 
 double calculateCallPrice(GameState *game, int playerIndex)
 {
-    if (game == NULL)
+    if (!isValidBotTarget(game, playerIndex))
         return 0.0;
 
     int callCost = calculateCallCost(game, playerIndex);
@@ -290,11 +295,17 @@ double calculateCallPrice(GameState *game, int playerIndex)
     if (callCost <= 0)
         return 0.0;
 
+    if (game->pot + callCost <= 0)
+        return 0.0;
+
     return (double)callCost / (game->pot + callCost);
 }
 
 PlayerAction getBotPreFlopAction(GameState *game, int playerIndex)
 {
+    if (!isValidBotTarget(game, playerIndex))
+        return (PlayerAction){FOLD, 0};
+
     Player_Info *bot = game->players[playerIndex];
     BotStrategy strategy = getBotStrategy(bot->botType);
     int score = evalPreFlop(bot->playerCards);
@@ -343,6 +354,9 @@ PlayerAction getBotPreFlopAction(GameState *game, int playerIndex)
 
 PlayerAction getBotPostFlopAction(GameState *game, int playerIndex)
 {
+    if (!isValidBotTarget(game, playerIndex))
+        return (PlayerAction){FOLD, 0};
+
     Player_Info *bot = game->players[playerIndex];
     BotStrategy strategy = getBotStrategy(bot->botType);
     int callCost = calculateCallCost(game, playerIndex);
@@ -374,6 +388,9 @@ PlayerAction getBotPostFlopAction(GameState *game, int playerIndex)
 
 PlayerAction getBotAction(GameState *game, int playerIndex)
 {
+    if (!isValidBotTarget(game, playerIndex))
+        return (PlayerAction){FOLD, 0};
+
     if (game->round == ROUND_PRE_FLOP)
         return getBotPreFlopAction(game, playerIndex);
 

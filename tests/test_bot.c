@@ -23,6 +23,7 @@ int main(void)
     int acesScore  = evalPreFlop(aces);
     int trashScore = evalPreFlop(trash);
     CHECK(acesScore > trashScore, "pocket aces should beat 7-2 offsuit preflop");
+    CHECK(evalPreFlop(NULL) == 0, "NULL preflop hand should be safe");
 
     /* getBotAction should produce a sane action for a bot in a real game */
     GameState game;
@@ -36,6 +37,14 @@ int main(void)
     PlayerAction action = getBotAction(&game, 0);
     CHECK(action.actionType >= FOLD && action.actionType <= RAISE,
           "bot action type out of range");
+
+    PlayerAction badGameAction = getBotAction(NULL, 0);
+    CHECK(badGameAction.actionType == FOLD && badGameAction.amount == 0,
+          "NULL game should fold safely");
+
+    PlayerAction badIndexAction = getBotAction(&game, 99);
+    CHECK(badIndexAction.actionType == FOLD && badIndexAction.amount == 0,
+          "invalid bot index should fold safely");
 
     printf("bot test passed (action=%d amount=%d)\n", action.actionType, action.amount);
     return 0;
