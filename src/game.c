@@ -344,8 +344,7 @@ GameActionResult handlePlayerAction(GameState *game, int playerIndex, PlayerActi
     }
 
     if (shouldEndRound(game)) {
-        int winner = determineWinner(game);
-        awardPotToWinner(game, winner);
+        awardPotToWinners(game);
         game->round = ROUND_SHOWDOWN;
         return GAME_ACTION_ROUND_COMPLETE;
     }
@@ -402,8 +401,7 @@ void advanceGameRound(GameState *game)
 
     while (game->round != ROUND_SHOWDOWN) {
         if (game->round == ROUND_RIVER) {
-            int winner = determineWinner(game);
-            awardPotToWinner(game, winner);
+            awardPotToWinners(game);
             game->round = ROUND_SHOWDOWN;
             return;
         }
@@ -469,5 +467,65 @@ void awardPotToWinner(GameState *game, int winnerIndex)
     }
 
     game->players[winnerIndex]->chips += game->pot;
+    game->pot = 0;
+}
+
+void awardPotToWinners(GameState *game)
+{
+    int winner = determineWinner(game);
+    int tiedWinners[MAX_PLAYERS_COUNT];
+    int tiedWinnerCount = 0;
+
+    if (!isValidPlayerIndex(game, winner) || game->pot <= 0) {
+        return;
+    }
+
+    if (game->board.count < MAX_DEALER_CARDS) {
+        awardPotToWinner(game, winner);
+        return;
+    }
+
+    Card winnerHand[2] = {
+        game->players[winner]->playerCards[0],
+        game->players[winner]->playerCards[1]
+    };
+    Card boardCards[MAX_DEALER_CARDS];
+
+    for (int card = 0; card < MAX_DEALER_CARDS; card++) {
+        boardCards[card] = game->board.cards[card];
+    }
+
+    for (int i = 0; i < game->numPlayers; i++) {
+        if (!isPlayerInHand(game, i)) {
+            continue;
+        }
+
+        Card playerHand[2] = {
+            game->players[i]->playerCards[0],
+            game->players[i]->playerCards[1]
+        };
+
+        if (compare_hands(playerHand, winnerHand, boardCards) == 0) {
+            tiedWinners[tiedWinnerCount++] = i;
+        }
+    }
+
+    if (tiedWinnerCount <= 1) {
+        awardPotToWinner(game, winner);
+        return;
+    }
+
+    int splitAmount = game->pot / tiedWinnerCount;
+    int remainder = game->pot % tiedWinnerCount;
+
+    for (int i = 0; i < tiedWinnerCount; i++) {
+        int payout = splitAmount;
+        if (i < remainder) {
+            payout++;
+        }
+
+        game->players[tiedWinners[i]]->chips += payout;
+    }
+
     game->pot = 0;
 }

@@ -26,5 +26,6 @@ bool shouldEndRound(const GameState *game);
 void advanceGameRound(GameState *game);
 int determineWinner(const GameState *game);
 void awardPotToWinner(GameState *game, int winnerIndex);
+void awardPotToWinners(GameState *game);
 
 #endif
