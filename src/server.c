@@ -9,7 +9,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <signal.h>
+#include <gtk/gtk.h>
 
+#include "gui_server.h"
 #include "communication.h"
 #include "bot.h"
 #include "game.h"
@@ -24,21 +26,40 @@
 #define STARTING_CHIPS 1000
 #define BOT_TURN_DELAY_SECONDS 1.5
 
-static void broadcastGameState(int *clientSockets, int joinedPlayers, GameState *game)
+/* Helper used to request a GUI update on the GTK main loop from worker threads */
+
+typedef struct {
+    ServerWindow *win;
+    GameState *game;
+} ServerUpdateArgs;
+
+static gboolean idle_update_server(gpointer user_data)
 {
-    char buffer[4096];
-
-    if (!clientSockets || joinedPlayers <= 0 || !game) {
-        return;
+    ServerUpdateArgs *args = (ServerUpdateArgs *)user_data;
+    if (args && args->win && args->game) {
+        updateServerWindow(args->win, NULL, args->game);
     }
-
-    if (formatFullGameState(buffer, sizeof(buffer), game)) {
-        broadcastToAll(clientSockets, joinedPlayers, buffer);
-    }
+    g_free(args);
+    return FALSE; /* run once */
 }
 
-static void playBotTurns(GameState *game, int *clientSockets, int joinedPlayers)
+static void schedule_server_update(GameState *game)
 {
+    if (!game) return;
+    GApplication *app = g_application_get_default();
+    if (!app) return;
+    ServerWindow *win = (ServerWindow *)g_object_get_data(G_OBJECT(app), "server-window");
+    if (!win) return;
+
+    ServerUpdateArgs *args = g_new0(ServerUpdateArgs, 1);
+    args->win = win;
+    args->game = game;
+    g_idle_add(idle_update_server, args);
+}
+
+static void playBotTurns(GameState *game)
+{
+
     int safetyCounter = 0;
 
     if (!game) {
@@ -189,6 +210,9 @@ void acceptClient(int* clientSockets, int serverSocket, int* joinedPlayers, Game
         printf("client has been accepted as player %d\n", playerNumber); 
         clientSockets[*joinedPlayers] = newClientSocket; 
         (*joinedPlayers)++; 
+
+        /* update server GUI to reflect new player */
+        schedule_server_update(game);
     }
 } 
 
@@ -230,7 +254,8 @@ void readMessage(int* clientSockets, int joinedPlayers, int playerIndex, GameSta
         printf("Player action: %s amount=%d\n", pokerActionTypeToString(action.type), action.amount);
         PlayerAction playerAction = {.actionType = action.type, .amount = action.amount}; 
         handlePlayerAction(game, playerIndex, playerAction); //added here
-        playBotTurns(game, clientSockets, joinedPlayers);
+        playBotTurns(game);
+        schedule_server_update(game);
     } else {
         printf("Unknown client message: %s\n", buffer);
         n = sendMessage(clientSocket, "Unknown message\n");
@@ -325,7 +350,8 @@ void lobby(int serverSocket, int* clientSockets)
                     bool startedNow = handleLobbyClientMessage(clientSockets, joinedPlayers, i, game, &gameStarted);
 
                     if (startedNow) {
-                        playBotTurns(game, clientSockets, joinedPlayers);
+                        playBotTurns(game);
+                        schedule_server_update(game);
 
                         broadcastGameState(clientSockets, joinedPlayers, game);
                     }
@@ -341,9 +367,11 @@ void lobby(int serverSocket, int* clientSockets)
 
                 if(getRound(game) == ROUND_SHOWDOWN){
                     startNewRound(game);
+                    schedule_server_update(game);
                 }
                 
-                playBotTurns(game, clientSockets, joinedPlayers);
+                playBotTurns(game);
+                schedule_server_update(game);
 
                 broadcastGameState(clientSockets, joinedPlayers, game);
             }
@@ -351,23 +379,38 @@ void lobby(int serverSocket, int* clientSockets)
     }
 }
 
+static gpointer server_thread(gpointer data)
+{
+    int *fds = data;
+    int serverSocket = fds[0];
+    int *clientSockets = g_new0(int, SERVER_MAX_PLAYERS);
+    lobby(serverSocket, clientSockets);
+    g_free(clientSockets);
+    return NULL;
+}
+
+static void on_activate(GApplication *app, gpointer user_data)
+{
+    int serverSocket = *(int *)user_data;
+    GameState *gameState = g_new0(GameState, 1);
+    initGameState(gameState);
+    ServerWindow *window = createServerWindow(GTK_APPLICATION(app), gameState);
+    /* populate label and initial draw from the current game state */
+    updateServerWindow(window, NULL, gameState);
+    g_object_set_data_full(G_OBJECT(app), "server-window", window, (GDestroyNotify)destroyServerWindow);
+    
+    int *fds = g_new0(int, 1);
+    fds[0] = serverSocket;
+    g_thread_new("server-thread", server_thread, fds);
+}
 
 int main(int argc, char *argv[])
 {
-    //array of client sockets --> aka players 
-
     printf("WE ARE RUNNING THE NEW VERSION\n"); 
     signal(SIGPIPE, SIG_IGN); //to stop disconnection
-
-    int clientSockets[SERVER_MAX_PLAYERS]; // clientSockets[i] = socket fd of player (i + 1).
-                                    // first joiner is player 1 at index 0, second is
-                                    // player 2 at index 1, etc. use the index as the
-                                    // player ID to look up or assign per-player data.
-
                                     
     int serverSocket, portno;
     struct sockaddr_in serv_addr; 
-
 
     if(!portNoProvided(argc)) 
         exit(1); 
@@ -376,6 +419,9 @@ int main(int argc, char *argv[])
 
     if (serverSocket < 0) 
         error("ERROR opening socket");
+
+    int opt = 1;
+    setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     bzero((char *) &serv_addr, sizeof(serv_addr)); //clear possible garbage from serv_addr
 
@@ -389,8 +435,12 @@ int main(int argc, char *argv[])
 
     listen(serverSocket, SERVER_MAX_PLAYERS); //we will allow only these many connections in our connection queue
 
-    lobby(serverSocket, clientSockets); 
+    //launch server window
+    GtkApplication *app = gtk_application_new("com.anteater.poker.server", G_APPLICATION_NON_UNIQUE);
+    g_signal_connect(app, "activate", G_CALLBACK(on_activate), &serverSocket);
+    int status = g_application_run(G_APPLICATION(app), 0, NULL);
+    g_object_unref(app);
 
     close(serverSocket);
-    return 0; 
+    return status;
 }
