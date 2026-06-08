@@ -413,8 +413,7 @@ void advanceGameRound(GameState *game)
         clearBets(game);
         dealCommunityCards(game);
 
-        // Keep the opening player consistent after community cards are dealt.
-        game->currentPlayerIndex = nextActingPlayerFrom(game, game->firstPlayerIndex - 1);
+        game->currentPlayerIndex = nextActingPlayerFrom(game, game->dealerIndex);
         if (game->currentPlayerIndex >= 0) {
             return;
         }
